@@ -1,0 +1,199 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Dark Mode Base (Default) */
+  --color-slate-950: #0F1115; /* Black Gold */
+  --color-slate-900: #161A20; /* Graphite */
+  --color-slate-850: #1B1E26;
+  --color-slate-800: #222630;
+  
+  --color-slate-400: #8da4c4;
+  --color-slate-300: #c5d3e8;
+  --color-slate-200: #e2e8f0;
+  --color-slate-100: #f1f5f9;
+
+  /* Premium Gold Accents */
+  --color-gold: #C89B3C;
+  --color-gold-light: #E1C27A;
+  --color-gold-dark: #9F7424;
+}
+
+.simulator-body {
+  background-color: var(--color-slate-950);
+  color: #f1f5f9;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ════════════════════════════════════════════
+   LIGHT MODE OVERRIDES (Ivory/Champagne)
+   ════════════════════════════════════════════ */
+html.light .simulator-body {
+  background-color: #F7F3EB !important; /* Ivory */
+  color: #2C251C !important;
+}
+
+html.light .simulator-root .bg-slate-950,
+html.light .simulator-root .bg-slate-950\/50,
+html.light .simulator-root .bg-slate-950\/60 {
+  background-color: #F7F3EB !important;
+}
+
+html.light .simulator-root .bg-slate-900 {
+  background-color: #EFE4D0 !important; /* Champagne */
+}
+
+html.light .simulator-root .bg-slate-850 {
+  background-color: #FFFFFF !important;
+}
+
+html.light .simulator-root .border-slate-850,
+html.light .simulator-root .border-slate-800,
+html.light .simulator-root .border-slate-900 {
+  border-color: rgba(200, 155, 60, 0.2) !important;
+}
+
+html.light .simulator-root .text-slate-100,
+html.light .simulator-root .text-slate-200,
+html.light .simulator-root .text-slate-300,
+html.light .simulator-root .text-white {
+  color: #1E1B15 !important;
+}
+
+html.light .simulator-root .text-slate-400,
+html.light .simulator-root .text-slate-500 {
+  color: #6B6050 !important;
+}
+
+html.light .simulator-root .text-gold {
+  color: #9F7424 !important; /* Dark Gold for contrast */
+}
+
+/* ════════════════════════════════════════════
+   PREMIUM CARDS (Mockup Style)
+   ════════════════════════════════════════════ */
+.premium-card {
+  background: var(--color-slate-900) !important;
+  border: 1px solid rgba(200, 155, 60, 0.15) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2) !important;
+  transition: all 0.3s ease;
+}
+
+html.light .premium-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(200, 155, 60, 0.2) !important;
+  box-shadow: 0 4px 24px rgba(200, 155, 60, 0.08) !important;
+}
+
+.premium-card:active {
+  transform: scale(0.98);
+}
+
+.premium-input {
+  background: var(--color-slate-950) !important;
+  border: 1px solid rgba(200, 155, 60, 0.3) !important;
+  border-radius: 16px !important;
+  color: white;
+}
+
+html.light .premium-input {
+  background: #EFE4D0 !important;
+  border: 1px solid rgba(200, 155, 60, 0.3) !important;
+  color: #1E1B15;
+}
+
+.premium-btn {
+  background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark)) !important;
+  color: #0F1115 !important;
+  font-weight: 700;
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(200, 155, 60, 0.3) !important;
+  transition: all 0.2s ease;
+}
+
+.premium-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(200, 155, 60, 0.2) !important;
+}
+
+/* ════════════════════════════════════════════
+   BOTTOM NAVIGATION
+   ════════════════════════════════════════════ */
+.bottom-nav {
+  background: var(--color-slate-900) !important;
+  border-top: 1px solid rgba(200, 155, 60, 0.15) !important;
+  border-radius: 24px 24px 0 0 !important;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.2) !important;
+}
+
+html.light .bottom-nav {
+  background: #FFFFFF !important;
+  border-top: 1px solid rgba(200, 155, 60, 0.2) !important;
+  box-shadow: 0 -4px 24px rgba(200, 155, 60, 0.08) !important;
+}
+
+/* FAB - Floating Action Button */
+.fab-btn {
+  background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark)) !important;
+  border-radius: 9999px !important;
+  color: #0F1115 !important;
+  box-shadow: 0 8px 24px rgba(200, 155, 60, 0.4) !important;
+}
+
+/* ════════════════════════════════════════════
+   SCROLLBAR & ANIMATIONS
+   ════════════════════════════════════════════ */
+::-webkit-scrollbar { display: none; } /* Native app feel */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out both;
+}
+@theme {
+  --color-background: #0F1115;
+  --color-surface: #0F1115;
+  --color-on-background: #f1f5f9;
+  --color-on-surface: #f1f5f9;
+  --color-on-surface-variant: #8da4c4;
+  --color-surface-container-lowest: #080A0D;
+  --color-surface-container-low: #111319;
+  --color-surface-container: #161A20;
+  --color-surface-container-high: #1B1E26;
+  --color-surface-container-highest: #222630;
+  --color-outline-variant: rgba(200, 155, 60, 0.15);
+  --color-outline: rgba(200, 155, 60, 0.3);
+  --color-primary: #C89B3C;
+  --color-on-primary: #0F1115;
+  --color-primary-container: #9F7424;
+  --color-on-primary-container: #f1f5f9;
+  --color-error: #f87171;
+  --color-on-error: #0F1115;
+  --color-error-container: #451a1a;
+  --color-on-error-container: #fecaca;
+  --color-secondary: #c5d3e8;
+  --color-on-secondary: #0F1115;
+  --color-secondary-container: #222630;
+  --color-on-secondary-container: #e2e8f0;
+}
+

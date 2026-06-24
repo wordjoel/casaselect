@@ -1,0 +1,8 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" rx="20" fill="#08111F"/>
+  <path d="M 50 14 L 80 22 L 80 56 C 80 72, 62 82, 50 86 C 38 82, 20 72, 20 56 L 20 22 Z" stroke="#dfb26c" stroke-width="4.5" stroke-linejoin="round" fill="none"/>
+  <g transform="translate(0, 3)">
+    <text x="38" y="62" font-family="'Playfair Display', Georgia, serif" font-size="42" font-weight="900" fill="#dfb26c" text-anchor="middle">C</text>
+    <text x="59" y="66" font-family="'Playfair Display', Georgia, serif" font-size="42" font-weight="900" fill="#dfb26c" text-anchor="middle">S</text>
+  </g>
+</svg>

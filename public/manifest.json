@@ -1,0 +1,28 @@
+{
+  "id": "/pwa",
+  "short_name": "Casa Select",
+  "name": "Casa Select - Kobayashi Property OS",
+  "description": "Sistema de gestão imobiliária premium Kobayashi",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/pwa",
+  "scope": "/",
+  "background_color": "#050B14",
+  "theme_color": "#dfb26c",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["business", "finance"]
+}

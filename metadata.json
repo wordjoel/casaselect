@@ -1,0 +1,6 @@
+{
+  "name": "Casa Select",
+  "description": "Central Inteligente de Gestão Patrimonial e Financeira de Imóveis para Locação de Temporada.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
