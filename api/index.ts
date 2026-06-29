@@ -126,7 +126,7 @@ const INITIAL_PROPERTIES: Property[] = [
     name: "Casa 512",
     location: "Granja Viana — Brasil",
     description: "A mansão mais luxuosa da Granja Viana",
-    image: "/assets/casa-512.jpg",
+    image: "/assets/casa-512.png",
     stars: 5.0,
     rooms: 4,
     bathrooms: 7,
