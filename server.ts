@@ -477,6 +477,18 @@ function getGenAI(): GoogleGenAI | null {
   return aiClient;
 }
 
+function getInmemoryItem(table: string, id: string): any {
+  if (table === "properties") return properties.find(p => p.id === id);
+  if (table === "bookings") return bookings.find(b => b.id === id);
+  if (table === "revenues") return revenues.find(r => r.id === id);
+  if (table === "expenses") return expenses.find(e => e.id === id);
+  if (table === "assets") return assets.find(a => a.id === id);
+  if (table === "maintenances") return maintenances.find(m => m.id === id);
+  if (table === "suppliers") return suppliers.find(s => s.id === id);
+  if (table === "documents") return documents.find(d => d.id === id);
+  return null;
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3001;
@@ -495,13 +507,72 @@ async function startServer() {
     saveToLocal();
   }
 
-  // Global persistence middleware: intercept successful write requests and save local changes
+  // Global persistence middleware: intercept successful write requests and save local changes + Supabase sync
   app.use((req, res, next) => {
     const originalJson = res.json;
     res.json = function(body) {
       const result = originalJson.call(this, body);
       if (["POST", "PUT", "DELETE"].includes(req.method) && res.statusCode >= 200 && res.statusCode < 300) {
         saveToLocal();
+        
+        // Supabase Sync
+        if (supabase) {
+          const path = req.path.toLowerCase();
+          let table = "";
+          
+          if (path.includes("/properties")) {
+            table = "properties";
+          } else if (path.includes("/bookings") || path.includes("/agenda")) {
+            table = "bookings";
+          } else if (path.includes("/revenues")) {
+            table = "revenues";
+          } else if (path.includes("/expenses")) {
+            table = "expenses";
+          } else if (path.includes("/assets")) {
+            table = "assets";
+          } else if (path.includes("/maintenances")) {
+            table = "maintenances";
+          } else if (path.includes("/suppliers")) {
+            table = "suppliers";
+          } else if (path.includes("/documents")) {
+            table = "documents";
+          } else if (path.includes("/finances")) {
+            if (body && body.type) {
+              table = body.type === "receita" ? "revenues" : "expenses";
+            } else if (req.params.id) {
+              table = req.params.id.startsWith("rev-") ? "revenues" : "expenses";
+            }
+          }
+          
+          if (table) {
+            if (req.method === "POST") {
+              if (body) {
+                const id = body.id;
+                if (id) {
+                  const dbItem = getInmemoryItem(table, id);
+                  if (dbItem) {
+                    saveToDatabase(table, dbItem, "insert");
+                  }
+                }
+              }
+            } else if (req.method === "PUT") {
+              if (body) {
+                const id = body.id || req.params.id;
+                if (id) {
+                  const dbItem = getInmemoryItem(table, id);
+                  if (dbItem) {
+                    saveToDatabase(table, dbItem, "update");
+                  }
+                }
+              }
+            } else if (req.method === "DELETE") {
+              const id = req.params.id;
+              if (id) {
+                saveToDatabase(table, id, "delete");
+              }
+            }
+          }
+        }
       }
       return result;
     };
