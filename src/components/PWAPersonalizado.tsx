@@ -532,9 +532,12 @@ export default function PWAPersonalizado({
       {/* Main Top Header */}
       <header className={`px-5 py-4 flex justify-between items-center border-b ${c.border} backdrop-blur-md sticky top-0 z-20`}>
         <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-[#dfb26c]/10 border border-[#dfb26c]/35 flex items-center justify-center">
+            <span className="text-[10px] font-black text-[#dfb26c]">CS</span>
+          </div>
           <div>
-            <h2 className={`font-display font-extrabold text-[14px] uppercase tracking-wider leading-none ${c.text}`}>
-              {rolePath === "ceo" ? "Henrique" : rolePath === "comercial" ? "Débora" : rolePath === "financeiro" ? "Katia Farah" : "Rubens Bossi"}
+            <h2 className={`font-display font-extrabold text-[12px] uppercase tracking-wider leading-none ${c.text}`}>
+              {roleLabels[rolePath]}
             </h2>
             <span className="text-[8px] font-mono font-bold tracking-widest text-[#dfb26c]/85 uppercase block mt-1">
               YEP ONE • PWA MOBILE

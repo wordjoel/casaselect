@@ -6,72 +6,63 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-slate-950: #050B14;
-  --color-slate-900: #08111F;
-  --color-slate-850: #0D1625;
-  --color-slate-800: #1A2740;
-  --color-slate-700: #2a3b5c;
-  --color-slate-600: #4b6188;
-  --color-slate-400: #8da4c4;
-  --color-slate-300: #c5d3e8;
-  --color-slate-200: #e2e8f0;
-  --color-slate-100: #f1f5f9;
+  --color-slate-950: #0B0F14; /* Dark Mode Background */
+  --color-slate-900: #101722; /* Dark Mode Sidebar */
+  --color-slate-850: #121922; /* Dark Mode Cards */
+  --color-slate-800: #202A36; /* Dark Mode Borders */
+  --color-slate-700: #2E3A4B;
+  --color-slate-600: #4B5E78;
+  --color-slate-400: #8DA4C4;
+  --color-slate-300: #C5D3E8;
+  --color-slate-200: #EAEAEA; /* Light Gray */
+  --color-slate-100: #F8F6F2; /* Off White */
 
-  --color-accent-purple: #b89047;
-  --color-accent-purple-hover: #916B21;
-  --color-accent-cyan: #06b6d4;
-  --color-gold: #dfb26c;
+  --color-accent-purple: #C8A27A; /* Champagne Gold */
+  --color-accent-purple-hover: #A97142; /* Bronze Premium */
+  --color-accent-cyan: #A97142; /* Bronze Premium */
+  --color-gold: #C8A27A; /* Champagne Gold */
 }
 
 body {
-  background-color: var(--color-slate-950);
-  color: #f1f5f9;
+  background-color: #0B0F14;
+  color: #EAEAEA;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #app-root-container {
-  background-image: url('/assets/dashboard-bg.jpg') !important;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
+  background-color: #0B0F14 !important;
+  background-image: radial-gradient(circle at top right, rgba(200, 162, 122, 0.05), transparent 60%) !important;
   background-attachment: fixed !important;
 }
 
 #app-workspace {
-  background: rgba(18, 23, 33, 0.82) !important;
-  backdrop-filter: blur(16px) !important;
+  background: rgba(11, 15, 20, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
 }
 
 html.light #app-workspace {
-  background: rgba(250, 248, 245, 0.15) !important;
-  backdrop-filter: blur(24px) !important;
+  background: #FAFAFA !important;
+  backdrop-filter: none !important;
 }
 
 .calendar-glass-container {
-  background-image: linear-gradient(rgba(15, 20, 28, 0.78), rgba(15, 20, 28, 0.78)), url('./calendar_bg.png') !important;
-  background-size: cover !important;
-  background-position: center !important;
-  backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #121922 !important;
+  border: 1px solid #202A36 !important;
   border-radius: 24px !important;
   overflow: hidden;
 }
 
 html.light .calendar-glass-container {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('./calendar_bg.png') !important;
-  background-size: cover !important;
-  background-position: center !important;
-  backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(184, 144, 71, 0.28) !important;
+  background: #FFFFFF !important;
+  border: 1px solid #EAEAEA !important;
 }
 
-
 #sidebar-container {
-  background: linear-gradient(180deg, rgba(24, 31, 46, 0.92) 0%, rgba(14, 18, 27, 0.92) 100%) !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: blur(20px) !important;
+  background: #101722 !important;
+  border-right: 1px solid #202A36 !important;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25) !important;
 }
 
 #sidebar-container button[id^="nav-item-"],
@@ -81,99 +72,89 @@ html.light .calendar-glass-container {
   border: 1px solid transparent;
 }
 
+/* Sidebar Item Active Style: Glow dourado elegante */
 #sidebar-container .bg-accent-purple\/15 {
-  background: linear-gradient(135deg, rgba(223, 178, 108, 0.25), rgba(184, 144, 71, 0.15)) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(223, 178, 108, 0.4) !important;
-  box-shadow: 0 4px 24px rgba(223, 178, 108, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  background: linear-gradient(135deg, rgba(200, 162, 122, 0.15), rgba(169, 113, 66, 0.08)) !important;
+  color: #C8A27A !important;
+  border: 1px solid rgba(200, 162, 122, 0.3) !important;
+  box-shadow: 0 4px 15px rgba(200, 162, 122, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
 #sidebar-container .bg-accent-purple\/15 svg {
-  color: #ffffff !important;
+  color: #C8A27A !important;
 }
 
 #sidebar-container button[id^="nav-item-"]:hover,
 #sidebar-container button[id="nav-finance-trigger"]:hover {
-  background-color: rgba(223, 178, 108, 0.06) !important;
-  border-left: 3px solid var(--color-gold) !important;
-  border-color: rgba(223, 178, 108, 0.15) !important;
-  color: var(--color-gold) !important;
+  background-color: rgba(200, 162, 122, 0.06) !important;
+  border-left: 3px solid #C8A27A !important;
+  border-color: rgba(200, 162, 122, 0.15) !important;
+  color: #C8A27A !important;
   padding-left: calc(0.75rem - 3px) !important;
 }
 
 #sidebar-container button[id^="nav-item-"]:hover svg,
 #sidebar-container button[id="nav-finance-trigger"]:hover svg {
-  color: var(--color-gold) !important;
+  color: #C8A27A !important;
 }
 
 #workspace-header {
-  background: rgba(5, 11, 20, 0.85) !important;
+  background: rgba(11, 15, 20, 0.85) !important;
   backdrop-filter: blur(16px) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid #202A36 !important;
 }
 
 html.light {
-  background-color: #FAF8F5 !important;
-  color: #2C251C;
+  background-color: #FAFAFA !important;
+  color: #111111 !important;
 }
 
 html.light body {
-  background-color: #FAF8F5 !important;
-  color: #2C251C;
+  background-color: #FAFAFA !important;
+  color: #111111 !important;
 }
 
 html.light #app-root-container {
-  background-image: 
-    linear-gradient(rgba(250, 248, 245, 0.15), rgba(250, 248, 245, 0.15)),
-    url('/assets/casa-select-garden.jpg') !important;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-attachment: fixed !important;
+  background-color: #FAFAFA !important;
+  background-image: radial-gradient(circle at top right, rgba(200, 162, 122, 0.06), transparent 50%) !important;
 }
 
 html.light .bg-slate-955:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  background-color: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(28px) !important;
-  border: 1px solid rgba(184, 144, 71, 0.28) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.75), 0 8px 32px rgba(184, 144, 71, 0.08) !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #EAEAEA !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }
 
 html.light .bg-slate-950:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  background-color: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(28px) !important;
-  border: 1px solid rgba(184, 144, 71, 0.28) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.75), 0 8px 32px rgba(184, 144, 71, 0.08) !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #EAEAEA !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }
 
 html.light .bg-slate-900:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  background-color: rgba(255, 255, 255, 0.68) !important;
-  backdrop-filter: blur(24px) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 8px 32px rgba(184, 144, 71, 0.06) !important;
-  border: 1px solid rgba(184, 144, 71, 0.25) !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #EAEAEA !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }
 
 html.light .bg-slate-850:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  background-color: rgba(255, 255, 255, 0.65) !important;
-  backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(184, 144, 71, 0.22) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 8px 32px rgba(184, 144, 71, 0.06) !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #EAEAEA !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
 }
 
 html.light .bg-slate-800:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  background-color: rgba(255, 255, 255, 0.68) !important;
-  backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(184, 144, 71, 0.25) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 8px 32px rgba(184, 144, 71, 0.06) !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #EAEAEA !important;
 }
 
 html.light .bg-slate-950\/50:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  background-color: rgba(255, 255, 255, 0.45) !important;
+  background-color: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(16px) !important;
 }
 
 html.light .bg-slate-950\/60:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  background-color: rgba(255, 255, 255, 0.55) !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
   backdrop-filter: blur(16px) !important;
 }
 
@@ -182,41 +163,42 @@ html.light .border-slate-900:not(#sidebar-container):not(#sidebar-container *):n
 html.light .border-slate-850:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep),
 html.light .border-slate-800:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep),
 html.light .border-slate-800\/60:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) {
-  border-color: rgba(184, 144, 71, 0.25) !important;
+  border-color: #EAEAEA !important;
 }
 
 html.light #sidebar-container {
-  background: linear-gradient(180deg, #FAF8F5 0%, #FFFFFF 100%) !important;
-  border-right: 1px solid #E8E3D9 !important;
+  background: #FFFFFF !important;
+  border-right: 1px solid #EAEAEA !important;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.02) !important;
 }
 
 html.light #sidebar-container button[id^="nav-item-"] {
-  color: #6B6050 !important;
+  color: #666666 !important;
 }
 
 html.light #sidebar-container button[id^="nav-item-"]:hover,
 html.light #sidebar-container button[id="nav-finance-trigger"]:hover {
-  background-color: rgba(184, 144, 71, 0.06) !important;
-  border-left: 3px solid #b89047 !important;
-  border-color: rgba(184, 144, 71, 0.15) !important;
-  color: #b89047 !important;
+  background-color: rgba(200, 162, 122, 0.06) !important;
+  border-left: 3px solid #C8A27A !important;
+  border-color: rgba(200, 162, 122, 0.15) !important;
+  color: #C8A27A !important;
   padding-left: calc(0.75rem - 3px) !important;
 }
 
 html.light #sidebar-container button[id^="nav-item-"]:hover svg,
 html.light #sidebar-container button[id="nav-finance-trigger"]:hover svg {
-  color: #b89047 !important;
+  color: #C8A27A !important;
 }
 
 html.light #sidebar-container .bg-accent-purple\/15 {
-  background: linear-gradient(135deg, rgba(184, 144, 71, 0.15), rgba(223, 178, 108, 0.08)) !important;
-  color: #b89047 !important;
-  border: 1px solid rgba(184, 144, 71, 0.3) !important;
-  box-shadow: 0 2px 12px rgba(184, 144, 71, 0.08) !important;
+  background: linear-gradient(135deg, rgba(200, 162, 122, 0.15), rgba(200, 162, 122, 0.08)) !important;
+  color: #C8A27A !important;
+  border: 1px solid rgba(200, 162, 122, 0.3) !important;
+  box-shadow: 0 2px 12px rgba(200, 162, 122, 0.08) !important;
 }
 
 html.light #sidebar-container .bg-accent-purple\/15 * {
-  color: #b89047 !important;
+  color: #C8A27A !important;
 }
 
 html.light .text-slate-100:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) { color: #1E1B15 !important; }
@@ -226,7 +208,7 @@ html.light .text-slate-400:not(#sidebar-container):not(#sidebar-container *):not
 html.light .text-slate-500:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) { color: #8C7F6E !important; }
 html.light .text-white:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep):not(.text-keep-white) { color: #1E1B15 !important; }
 html.light .text-emerald-400:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) { color: #059669 !important; }
-html.light .text-accent-cyan:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) { color: #b89047 !important; }
+html.light .text-accent-cyan:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) { color: #C8A27A !important; }
 html.light .text-orange-400:not(#sidebar-container):not(#sidebar-container *):not(.sidebar-keep) { color: #d97706 !important; }
 
 html.light .bg-accent-purple .text-white,

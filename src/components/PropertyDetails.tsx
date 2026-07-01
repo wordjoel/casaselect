@@ -26,8 +26,6 @@ interface PropertyDetailsProps {
   onOpenQuickForm: (formType: "revenue" | "expense" | "booking" | "asset" | "maintenance" | "property", defaultPropertyId: string) => void;
   onEditProperty: (property: Property) => void;
   onDeleteProperty: (id: string) => void;
-  userRole?: string;
-  onUpdateProperty?: (id: string, updated: Partial<Property>) => Promise<void>;
 }
 
 export default function PropertyDetails({
@@ -39,74 +37,8 @@ export default function PropertyDetails({
   onBack,
   onOpenQuickForm,
   onEditProperty,
-  onDeleteProperty,
-  userRole,
-  onUpdateProperty
+  onDeleteProperty
 }: PropertyDetailsProps) {
-
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [editName, setEditName] = React.useState(property.name);
-  const [editLocation, setEditLocation] = React.useState(property.location);
-  const [editDescription, setEditDescription] = React.useState(property.description);
-  const [editImage, setEditImage] = React.useState(property.image || "");
-  const [editRooms, setEditRooms] = React.useState(property.rooms || 0);
-  const [editBathrooms, setEditBathrooms] = React.useState(property.bathrooms || 0);
-  const [editGuests, setEditGuests] = React.useState(property.guests || 0);
-  const [editPrice, setEditPrice] = React.useState(property.pricePerNight || 0);
-  const [editSize, setEditSize] = React.useState(property.sizeSqM || 0);
-  const [editStars, setEditStars] = React.useState(property.stars || 5.0);
-
-  React.useEffect(() => {
-    setEditName(property.name);
-    setEditLocation(property.location);
-    setEditDescription(property.description);
-    setEditImage(property.image || "");
-    setEditRooms(property.rooms || 0);
-    setEditBathrooms(property.bathrooms || 0);
-    setEditGuests(property.guests || 0);
-    setEditPrice(property.pricePerNight || 0);
-    setEditSize(property.sizeSqM || 0);
-    setEditStars(property.stars || 5.0);
-    setIsEditing(false);
-  }, [property]);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        
-        const MAX_DIM = 1000;
-        if (width > MAX_DIM || height > MAX_DIM) {
-          if (width > height) {
-            height = Math.round((height * MAX_DIM) / width);
-            width = MAX_DIM;
-          } else {
-            width = Math.round((width * MAX_DIM) / height);
-            height = MAX_DIM;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-          setEditImage(compressedBase64);
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
 
   // Dynamic filter for items belonging strictly to this property
   const propRevenues = React.useMemo(() => revenues.filter(r => r.propertyId === property.id), [revenues, property.id]);
@@ -244,13 +176,6 @@ export default function PropertyDetails({
     const [fullscreen, setFullscreen] = React.useState(false);
     const [zoomScale, setZoomScale] = React.useState(1);
 
-    const [isEditingPhoto, setIsEditingPhoto] = React.useState(false);
-    const [photoUrlInput, setPhotoUrlInput] = React.useState(property.image || "");
-
-    React.useEffect(() => {
-      setPhotoUrlInput(property.image || "");
-    }, [property.image]);
-
     const touchStartX = React.useRef(0);
     const touchCurrentX = React.useRef(0);
 
@@ -319,21 +244,8 @@ export default function PropertyDetails({
             {currentIndex + 1} / {images.length}
           </div>
 
-          {/* Controls Trigger */}
-          <div className="absolute top-4 right-4 flex gap-2 z-20">
-            {userRole === "admin" && (
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditingPhoto(true);
-                }} 
-                className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 backdrop-blur-md transition-all cursor-pointer border border-amber-600/30 flex items-center gap-1 text-[10px] font-bold shadow-lg"
-                title="Editar Link da Foto"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                <span>Editar Foto</span>
-              </button>
-            )}
+          {/* Fullscreen Trigger */}
+          <div className="absolute top-4 right-4 flex gap-2">
             <button 
               onClick={toggleFullscreen} 
               className="p-1.5 rounded-xl bg-black/45 hover:bg-black/60 text-white backdrop-blur-md transition-all cursor-pointer border border-white/5"
@@ -342,47 +254,6 @@ export default function PropertyDetails({
               <svg xmlns="http://www.w3.org/2050/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 3 6 6-6 6-6-6 6-6z"/><path d="M9 21 3 15l6-6 6 6-6 6z"/></svg>
             </button>
           </div>
-
-          {/* Edit photo URL input form overlay */}
-          {isEditingPhoto && (
-            <div 
-              onClick={(e) => e.stopPropagation()}
-              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col justify-center p-5 z-30 animate-fade-in"
-            >
-              <h5 className="text-white font-display font-bold text-sm mb-1.5 flex items-center gap-1.5">
-                <span className="text-amber-400">📷</span> Editar Link da Foto
-              </h5>
-              <p className="text-slate-400 text-[10px] mb-3 leading-relaxed">
-                Insira o link (URL) da nova imagem da propriedade para atualizar o banco de dados.
-              </p>
-              <input 
-                type="text" 
-                value={photoUrlInput} 
-                onChange={(e) => setPhotoUrlInput(e.target.value)} 
-                className="w-full bg-slate-900 border border-slate-700/60 p-2.5 rounded-xl text-white font-mono text-xs mb-3.5 focus:outline-none focus:border-amber-500" 
-                placeholder="https://images.unsplash.com/... ou URL da imagem"
-              />
-              <div className="flex justify-end gap-2">
-                <button 
-                  onClick={() => setIsEditingPhoto(false)} 
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  onClick={async () => {
-                    if (onUpdateProperty) {
-                      await onUpdateProperty(property.id, { image: photoUrlInput });
-                    }
-                    setIsEditingPhoto(false);
-                  }} 
-                  className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold cursor-pointer"
-                >
-                  Salvar Foto
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Chevrons for Desktop Hover */}
           {currentIndex > 0 && (
@@ -509,22 +380,18 @@ export default function PropertyDetails({
 
         {/* Action triggers */}
         <div className="flex flex-wrap gap-2">
-          {userRole === "admin" && (
-            <>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-all"
-              >
-                Editar Imóvel
-              </button>
-              <button
-                onClick={() => onDeleteProperty(property.id)}
-                className="border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-all"
-              >
-                Excluir
-              </button>
-            </>
-          )}
+          <button
+            onClick={() => onEditProperty(property)}
+            className="border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-all"
+          >
+            Editar Imóvel
+          </button>
+          <button
+            onClick={() => onDeleteProperty(property.id)}
+            className="border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-all"
+          >
+            Excluir
+          </button>
           <button
             onClick={() => onOpenQuickForm("booking", property.id)}
             className="border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-all"
@@ -811,182 +678,6 @@ export default function PropertyDetails({
         </div>
 
       </div>
-
-      {isEditing && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in select-none">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar relative">
-            <button 
-              onClick={() => setIsEditing(false)}
-              className="absolute right-4 top-4 w-8 h-8 rounded-full bg-slate-950 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer font-bold border border-slate-800"
-            >
-              ✕
-            </button>
-            <div>
-              <h3 className="font-display font-bold text-lg text-white">Editar Informações da Propriedade</h3>
-              <p className="text-[10px] text-slate-400 font-mono mt-0.5">Altere dados cadastrais, técnicos e de precificação.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-mono uppercase">Nome da Propriedade</label>
-                <input 
-                  type="text" 
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-sans text-xs focus:outline-none focus:border-amber-500" 
-                  placeholder="Nome"
-                />
-              </div>
-
-              <div className="col-span-2 space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-mono uppercase">Localização</label>
-                <input 
-                  type="text" 
-                  value={editLocation}
-                  onChange={(e) => setEditLocation(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-sans text-xs focus:outline-none focus:border-amber-500" 
-                  placeholder="ex: São Sebastião, SP"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-mono uppercase">Preço por Noite / Diária (R$)</label>
-                <input 
-                  type="number" 
-                  value={editPrice}
-                  onChange={(e) => setEditPrice(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500" 
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-mono uppercase">Tamanho (m²)</label>
-                <input 
-                  type="number" 
-                  value={editSize}
-                  onChange={(e) => setEditSize(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500" 
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 col-span-2">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-slate-400 font-mono uppercase">Quartos / Suítes</label>
-                  <input 
-                    type="number" 
-                    value={editRooms}
-                    onChange={(e) => setEditRooms(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500" 
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-slate-400 font-mono uppercase">Banheiros</label>
-                  <input 
-                    type="number" 
-                    value={editBathrooms}
-                    onChange={(e) => setEditBathrooms(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500" 
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-slate-400 font-mono uppercase">Hóspedes Máx.</label>
-                  <input 
-                    type="number" 
-                    value={editGuests}
-                    onChange={(e) => setEditGuests(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500" 
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-mono uppercase">Avaliação (0 a 5)</label>
-                <input 
-                  type="number" 
-                  step="0.05"
-                  min="0"
-                  max="5"
-                  value={editStars}
-                  onChange={(e) => setEditStars(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500" 
-                />
-              </div>
-
-              <div className="col-span-2 space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-mono uppercase">Foto da Propriedade (Link ou Imagem Local)</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={editImage}
-                    onChange={(e) => setEditImage(e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-amber-500" 
-                    placeholder="https://... ou imagem convertida em Base64"
-                  />
-                  <label className="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 shrink-0 border border-slate-750 select-none">
-                    <span>📁</span> Local
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageUpload} 
-                      className="hidden" 
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {editImage && (
-                <div className="col-span-2 mt-1">
-                  <span className="text-[9px] text-slate-500 font-mono block uppercase mb-1">Pré-visualização</span>
-                  <div className="h-28 w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
-                    <img src={editImage} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-              )}
-
-              <div className="col-span-2 space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-mono uppercase">Descrição</label>
-                <textarea 
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-white font-sans text-xs focus:outline-none focus:border-amber-500 h-20" 
-                  placeholder="Descreva o imóvel..."
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-              <button 
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={async () => {
-                  if (onUpdateProperty) {
-                    await onUpdateProperty(property.id, {
-                      name: editName,
-                      location: editLocation,
-                      description: editDescription,
-                      image: editImage,
-                      rooms: editRooms,
-                      bathrooms: editBathrooms,
-                      guests: editGuests,
-                      pricePerNight: editPrice,
-                      sizeSqM: editSize,
-                      stars: editStars
-                    });
-                  }
-                  setIsEditing(false);
-                }}
-                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold cursor-pointer"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,7 +1,29 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Clock, MapPin, Plus, X, FileText, Trash2 } from "lucide-react";
-import { AgendaEvent, Property } from "./types";
+import { Plus, X, ChevronRight } from "lucide-react";
+
+interface AgendaEvent {
+  id: string;
+  propertyId: string;
+  propertyName: string;
+  type: "checkin" | "checkout" | "limpeza" | "manutencao";
+  date: string;
+  time: string;
+  description: string;
+  notes?: string;
+}
+
+interface Property {
+  id: string;
+  name: string;
+  receitado: number;
+  ocupacao: number;
+  rating: number;
+  status: "Ativas" | "Inativas";
+  address: string;
+  dailyRate: number;
+  imageUrl: string;
+}
 
 interface CalendarScreenProps {
   key?: string;
@@ -14,143 +36,125 @@ interface CalendarScreenProps {
 }
 
 export default function CalendarScreen({ 
-  agenda, 
   properties, 
   onAddEvent, 
-  onUpdateEvent,
-  onDeleteEvent,
   isDarkMode 
 }: CalendarScreenProps) {
-  // Calendar centers on May 2026 as shown in the original mockups
-  const [selectedDay, setSelectedDay] = useState("2026-05-16"); // Matches standard mock date May 16, 2026
-  
-  // Custom Addition/Edit Modal State
+  const [selectedDay, setSelectedDay] = useState(15);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<AgendaEvent | null>(null);
-  const [newEventPropName, setNewEventPropName] = useState("Casa Amado");
-  const [newEventTime, setNewEventTime] = useState("10:00");
-  const [newEventType, setNewEventType] = useState<"checkin" | "checkout" | "limpeza" | "manutencao">("checkin");
-  const [newEventDesc, setNewEventDesc] = useState("");
-  const [newEventNotes, setNewEventNotes] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
 
-  // Logic to build a perfect calendar day grid for May 2026
-  // May 1st 2026 falls on a Friday. So we have 5 empty days at start (Sun, Mon, Tue, Wed, Thu are empty/prior month)
-  // Total days in May is 31
-  const daysInMay = 31;
-  const startOffset = 5; // Friday index (0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat)
+  // Form states
+  const [newTitle, setNewTitle] = useState("");
+  const [newTime, setNewTime] = useState("10:00");
 
-  const calendarDaysList: (number | null)[] = [];
+  // Maio 2025 Calendar Configuration
+  // 1st of May 2025 is a Thursday.
+  // Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3. Thursday is 4.
+  // So startOffset is 4. Total days: 31.
+  const daysInMonth = 31;
+  const startOffset = 4;
+
+  const daysList: (number | null)[] = [];
   for (let i = 0; i < startOffset; i++) {
-    calendarDaysList.push(null);
+    daysList.push(null);
   }
-  for (let day = 1; day <= daysInMay; day++) {
-    calendarDaysList.push(day);
+  for (let d = 1; d <= daysInMonth; d++) {
+    daysList.push(d);
   }
 
-  // Get active agenda items for selectedDay
-  const dayEvents = agenda.filter(item => item.date === selectedDay);
-
-  const getEventNamePT = (type: string) => {
-    switch (type) {
-      case "checkout": return "Check-out";
-      case "checkin": return "Check-in";
-      case "limpeza": return "Limpeza";
-      case "manutencao": return "Manutenção";
-      default: return type;
+  // Pre-configured mockup events matching Screen 5
+  const defaultEvents = [
+    {
+      id: "ev-1",
+      title: "Reunião com Contador",
+      dateStr: "15/05/2025",
+      time: "10:00",
+      dayNum: 15,
+      accentColor: "#8B5CF6", // Purple
+      details: "Alinhamento fiscal e fechamento do faturamento trimestral das propriedades."
+    },
+    {
+      id: "ev-2",
+      title: "Pagamento IPTU",
+      dateStr: "12/05/2025",
+      time: "09:00",
+      dayNum: 12,
+      accentColor: "#3B82F6", // Blue
+      details: "Vencimento da cota única do imposto territorial urbano anual das unidades de São Paulo."
     }
-  };
+  ];
 
-  const handleDayClick = (dayNum: number) => {
-    // Construct double-digit string format (e.g. "2026-05-16")
-    const paddedDay = String(dayNum).padStart(2, '0');
-    setSelectedDay(`2026-05-${paddedDay}`);
-  };
+  const [userEvents, setUserEvents] = useState<any[]>([]);
 
-  const handleCloseForm = () => {
-    setIsAddOpen(false);
-    setEditingEvent(null);
-    setNewEventPropName(properties[0]?.name || "Casa Amado");
-    setNewEventTime("10:00");
-    setNewEventType("checkin");
-    setNewEventDesc("");
-    setNewEventNotes("");
-  };
-
-  const handleEditClick = (ev: AgendaEvent) => {
-    setEditingEvent(ev);
-    setNewEventPropName(ev.propertyName);
-    setNewEventTime(ev.time);
-    setNewEventType(ev.type);
-    setNewEventDesc(ev.description);
-    setNewEventNotes(ev.notes || "");
-    setIsAddOpen(true);
-  };
-
-  const handleAddSubmit = async (e: React.FormEvent) => {
+  const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEventDesc) return;
-    const matchedProp = properties.find(p => p.name === newEventPropName);
-    
-    if (editingEvent) {
-      await onUpdateEvent(editingEvent.id, {
-        propertyId: matchedProp ? matchedProp.id : "prop-general",
-        propertyName: newEventPropName,
-        type: newEventType,
-        time: newEventTime,
-        description: newEventDesc,
-        notes: newEventNotes
-      });
-    } else {
-      await onAddEvent({
-        propertyId: matchedProp ? matchedProp.id : "prop-general",
-        propertyName: newEventPropName,
-        type: newEventType,
-        date: selectedDay, // schedule on active selected day
-        time: newEventTime,
-        description: newEventDesc,
-        notes: newEventNotes
-      });
-    }
-    handleCloseForm();
+    if (!newTitle) return;
+    const newEv = {
+      id: `ev-${Date.now()}`,
+      title: newTitle,
+      dateStr: `${selectedDay.toString().padStart(2, "0")}/05/2025`,
+      time: newTime,
+      dayNum: selectedDay,
+      accentColor: "#C8A27A", // Gold default for user events
+      details: "Nova atividade adicionada na agenda."
+    };
+    setUserEvents(prev => [...prev, newEv]);
+    setNewTitle("");
+    setIsAddOpen(false);
   };
+
+  const allDisplayEvents = [...userEvents, ...defaultMockEventsFiltered()];
+
+  function defaultMockEventsFiltered() {
+    // Return all mock events or just those for the active selected day if preferred, 
+    // but the mockup lists both upcoming events under "Próximos Eventos" when on day 15.
+    // So we return them all.
+    return defaultEvents;
+  }
 
   return (
     <div className="w-full flex-1 flex flex-col pt-3 relative h-full">
-      {/* Header bar row */}
+      {/* 1. Header (Agenda + Plus button) */}
       <div className="flex justify-between items-center mb-4">
-        <div>
-          <h2 className="font-display font-bold text-xl leading-snug">Calendário</h2>
-          <p className="text-[10px] opacity-60">Logística de entrada, saída e higienização das casas</p>
-        </div>
-        <button
-          onClick={() => {
-            handleCloseForm();
-            setIsAddOpen(true);
-          }}
-          className="p-2 rounded-full cursor-pointer bg-gradient-to-r from-[#C29438] to-[#916B21] text-white hover:opacity-90 shadow-sm"
+        <h2 
+          className={`font-serif text-lg font-bold text-left ${isDarkMode ? "text-white" : "text-[#4A3C31]"}`}
+          style={{ fontFamily: "'Playfair Display', 'Times New Roman', Georgia, serif" }}
         >
-          <Plus size={16} />
+          Agenda
+        </h2>
+        <button
+          onClick={() => setIsAddOpen(true)}
+          className={`p-1.5 rounded-full cursor-pointer transition ${
+            isDarkMode ? "text-[#E6C687] hover:bg-neutral-800" : "text-[#A97142] hover:bg-stone-100"
+          }`}
+        >
+          <Plus size={20} />
         </button>
       </div>
 
-      {/* Calendário Grid Wrapper Box */}
-      <div className={`p-4 rounded-2xl border ${
-        isDarkMode ? "bg-[#1C1C1E] border-neutral-800" : "bg-white border-amber-200/60"
-      } shadow-sm font-sans text-xs`}>
-        
-        {/* Month switcher bar */}
-        <div className="flex justify-between items-center mb-4 border-b border-neutral-800/10 dark:border-white/10 pb-2">
-          <span className="font-display font-extrabold text-sm tracking-tight text-[#C59B27] uppercase">
-            Maio 2026
-          </span>
-          <span className={`text-[10px] font-bold font-mono ${isDarkMode ? "text-neutral-400" : "text-amber-950"}`}>
-            Maio/2026
-          </span>
-        </div>
+      {/* 2. Month Selector */}
+      <div className="flex justify-between items-center mb-4 px-2">
+        <button className={`text-sm font-semibold opacity-60 ${isDarkMode ? "text-white" : "text-amber-950"}`}>
+          &lt;
+        </button>
+        <span className={`text-[12.5px] font-bold ${isDarkMode ? "text-white" : "text-[#4A3C31]"}`}>
+          Maio 2025
+        </span>
+        <button className={`text-sm font-semibold opacity-60 ${isDarkMode ? "text-white" : "text-amber-950"}`}>
+          &gt;
+        </button>
+      </div>
 
+      {/* 3. Calendar Grid */}
+      <div 
+        className={`p-3.5 rounded-2xl border mb-5 font-sans text-xs ${
+          isDarkMode ? "bg-[#11161D] border-neutral-800/80" : "bg-white border-stone-100 shadow-xs"
+        }`}
+      >
         {/* Days of week header */}
-        <div className={`grid grid-cols-7 text-center font-extrabold text-[10px] mb-2.5 uppercase tracking-wider ${
-          isDarkMode ? "text-neutral-400" : "text-amber-950"
+        <div className={`grid grid-cols-7 text-center font-bold text-[9px] mb-3 uppercase tracking-wider ${
+          isDarkMode ? "text-neutral-400" : "text-[#856E58]"
         }`}>
           <span>Dom</span>
           <span>Seg</span>
@@ -161,143 +165,138 @@ export default function CalendarScreen({
           <span>Sáb</span>
         </div>
 
-        {/* Calendar days cells */}
-        <div className="grid grid-cols-7 gap-y-1.5 text-center items-center">
-          {calendarDaysList.map((dayNum, index) => {
-            if (dayNum === null) {
-              return <div key={`empty-${index}`} className="h-9" />;
+        {/* Days cells */}
+        <div className="grid grid-cols-7 gap-y-2 text-center items-center">
+          {daysList.map((day, idx) => {
+            if (day === null) {
+              return <div key={`empty-${idx}`} className="h-8" />;
             }
 
-            const activeDayStr = `2026-05-${String(dayNum).padStart(2, '0')}`;
-            const isSelected = selectedDay === activeDayStr;
-            const dayEventsList = agenda.filter(e => e.date === activeDayStr);
-            const hasEvents = dayEventsList.length > 0;
-            
+            const isSelected = selectedDay === day;
+            const hasEvent = defaultEvents.some(e => e.dayNum === day) || userEvents.some(e => e.dayNum === day);
+
             return (
               <div
-                key={`day-${dayNum}`}
-                onClick={() => handleDayClick(dayNum)}
-                className={`h-9 flex flex-col items-center justify-center rounded-lg cursor-pointer transition relative ${
+                key={`day-${day}`}
+                onClick={() => setSelectedDay(day)}
+                className={`h-8 w-8 mx-auto flex items-center justify-center rounded-full cursor-pointer transition text-[11px] font-mono font-bold ${
                   isSelected
-                    ? "bg-[#C59B27] text-white font-black shadow-sm"
-                    : hasEvents
+                    ? "bg-[#C8A27A] text-white"
+                    : hasEvent
                     ? isDarkMode
-                      ? "bg-[#C59B27]/15 text-[#C59B27] font-bold border border-[#C59B27]/25 hover:bg-[#C59B27]/25"
-                      : "bg-amber-100 text-amber-950 font-bold border border-amber-300 hover:bg-amber-150"
+                      ? "text-[#E6C687] bg-[#C8A27A]/10 border border-[#C8A27A]/25"
+                      : "text-[#A97142] bg-[#EFE4D0] border border-amber-200/50"
                     : isDarkMode
-                    ? "hover:bg-neutral-800 text-neutral-200"
-                    : "hover:bg-amber-50 text-stone-900 font-semibold"
+                    ? "text-neutral-300 hover:bg-neutral-800/60"
+                    : "text-stone-700 hover:bg-stone-50"
                 }`}
               >
-                <span className="text-xs font-mono">{dayNum}</span>
-                
-                {/* Colored dots represent micro indicator logs of events */}
-                {hasEvents && !isSelected && (
-                  <div className="flex space-x-0.5 mt-0.5 justify-center items-center absolute bottom-1">
-                    {dayEventsList.map(ev => {
-                      let dotColor = "bg-neutral-500";
-                      if (ev.type === "checkout") dotColor = "bg-orange-500";
-                      if (ev.type === "checkin") dotColor = "bg-green-600";
-                      if (ev.type === "limpeza") dotColor = "bg-orange-400";
-                      if (ev.type === "manutencao") dotColor = "bg-blue-600";
-                      return (
-                        <span 
-                          key={ev.id} 
-                          className={`w-1 h-1 rounded-full ${dotColor}`} 
-                        />
-                      );
-                    })}
-                  </div>
-                )}
+                {day}
               </div>
             );
           })}
         </div>
-
       </div>
 
-      {/* AGENDA EVENTS LIST FOR THE ACTIVE DAY */}
-      <div className="mt-5 space-y-3 pb-24 overflow-y-auto no-scrollbar flex-1 font-sans">
-        
-        {/* Day subtitle banner */}
-        <div className="flex justify-between items-center border-b border-neutral-800/10 dark:border-white/10 pb-2">
-          <span className="text-xs font-bold opacity-75">
-            Agenda - {selectedDay ? selectedDay.split("-")[2] : "16"} de Maio
-          </span>
-          <span className="text-[10px] opacity-60 font-mono font-medium">({dayEvents.length} eventos)</span>
-        </div>
+      {/* 4. Próximos Eventos Section */}
+      <div className="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-24 text-left">
+        <h4 className={`text-[12px] font-bold tracking-tight ${isDarkMode ? "text-white" : "text-[#4A3C31]"}`}>
+          Próximos Eventos
+        </h4>
 
-        {/* Schedule rows */}
-        <div className="space-y-2.5">
-          {dayEvents.length === 0 ? (
-            <div className="py-8 text-center text-xs opacity-50">
-              Nenhuma atividade logística para este dia.
-            </div>
+        <div className="space-y-2">
+          {allDisplayEvents.length === 0 ? (
+            <p className="text-xs opacity-50 text-center py-4">Nenhuma atividade agendada.</p>
           ) : (
-            dayEvents
-              .sort((a,b) => a.time.localeCompare(b.time))
-              .map(ev => {
-                let badgeStyle = "bg-green-500/10 text-green-500";
-                if (ev.type === "checkout") badgeStyle = "bg-orange-500/10 text-orange-500";
-                if (ev.type === "limpeza") badgeStyle = "bg-yellow-500/12 text-yellow-500";
-                if (ev.type === "manutencao") badgeStyle = "bg-blue-500/10 text-blue-500";
-
-                return (
-                  <div
-                    key={ev.id}
-                    onClick={() => handleEditClick(ev)}
-                    className={`p-3 rounded-xl border flex items-start justify-between cursor-pointer hover:border-[#C59B27]/50 hover:shadow-md transition active:scale-[0.99] duration-200 select-none ${
-                      isDarkMode 
-                        ? "bg-[#1C1C1E] border-neutral-800 hover:bg-neutral-900" 
-                        : "bg-white border-amber-100 hover:bg-amber-50/20"
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      {/* Left time block badge */}
-                      <span className={`p-1 px-2 rounded-lg bg-neutral-300/10 font-mono font-bold text-[10px] flex items-center space-x-1 self-center ${
-                        isDarkMode ? "text-neutral-400" : "text-stone-600"
-                      }`}>
-                        <Clock size={10} />
-                        <span>{ev.time}</span>
-                      </span>
-
-                      {/* Info core */}
-                      <div>
-                        <span className="text-[11px] font-semibold block leading-tight">{ev.description}</span>
-                        <div className={`flex items-center space-x-1.5 mt-1 text-[10px] ${
-                          isDarkMode ? "opacity-65" : "text-stone-600 font-medium"
-                        }`}>
-                          <MapPin size={9} className="text-[#C59B27]" />
-                          <span>{ev.propertyName}</span>
-                        </div>
-                        {ev.notes && (
-                          <div className="text-[10px] mt-1.5 p-1.5 font-mono leading-tight rounded bg-[#C59B27]/10 text-amber-600 dark:text-amber-400 max-w-[200px] border border-amber-500/10 flex items-start gap-1">
-                            <FileText size={10} className="mt-0.5 shrink-0" />
-                            <span className="break-words">{ev.notes}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right side event type capsule */}
-                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded tracking-wide uppercase shrink-0 ${badgeStyle}`}>
-                      {getEventNamePT(ev.type)}
-                    </span>
+            allDisplayEvents.map((ev) => (
+              <div
+                key={ev.id}
+                onClick={() => setSelectedEvent(ev)}
+                className={`rounded-xl border flex items-center justify-between cursor-pointer overflow-hidden transition-all ${
+                  isDarkMode 
+                    ? "bg-[#11161D] border-neutral-800/80 hover:bg-[#151c25]" 
+                    : "bg-white border-stone-100 hover:bg-stone-50"
+                }`}
+              >
+                {/* Left accent bar and title */}
+                <div className="flex items-center h-full">
+                  <div 
+                    className="w-1 h-[48px] shrink-0" 
+                    style={{ backgroundColor: ev.accentColor }} 
+                  />
+                  <div className="p-3 text-left">
+                    <h5 className={`text-[11.5px] font-bold ${isDarkMode ? "text-white" : "text-[#4A3C31]"}`}>
+                      {ev.title}
+                    </h5>
+                    <p className={`text-[9px] opacity-65 mt-0.5 ${isDarkMode ? "text-neutral-400" : "text-[#856E58]"}`}>
+                      {ev.dateStr} • {ev.time}
+                    </p>
                   </div>
-                );
-              })
+                </div>
+
+                {/* Right chevron */}
+                <div className={`pr-3 ${isDarkMode ? "text-neutral-600" : "text-stone-400"}`}>
+                  <ChevronRight size={14} />
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
 
-      {/* MODAL SHEET: Adicionar/Editar evento de agenda (Animates slide-up) */}
+      {/* Event Details Drawer */}
+      <AnimatePresence>
+        {selectedEvent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedEvent(null)}
+            className="absolute inset-0 bg-black/60 z-30 flex items-end rounded-2xl overflow-hidden"
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full rounded-t-2xl p-5 overflow-y-auto no-scrollbar relative ${
+                isDarkMode ? "bg-[#11161D] text-white" : "bg-[#FAF8F5] text-amber-950"
+              }`}
+            >
+              <button 
+                onClick={() => setSelectedEvent(null)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-black/5 hover:bg-black/10 text-current"
+              >
+                <X size={16} />
+              </button>
+
+              <h3 className="font-serif font-bold text-base pr-8 text-left">{selectedEvent.title}</h3>
+              <p className="text-[10px] opacity-65 text-left mt-1">{selectedEvent.dateStr} • {selectedEvent.time}</p>
+
+              <div className="my-4 text-left p-3.5 rounded-xl border border-current/15 text-xs leading-relaxed opacity-95">
+                {selectedEvent.details}
+              </div>
+
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="w-full py-2.5 rounded-lg text-xs font-bold text-white bg-[#A97142] hover:bg-[#8e5c32] transition-all"
+              >
+                Voltar à Agenda
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Event Modal */}
       <AnimatePresence>
         {isAddOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={handleCloseForm}
+            onClick={() => setIsAddOpen(false)}
             className="absolute inset-0 bg-black/60 z-30 flex items-end rounded-2xl overflow-hidden"
           >
             <motion.div
@@ -307,134 +306,51 @@ export default function CalendarScreen({
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
               onClick={(e) => e.stopPropagation()}
               className={`w-full rounded-t-2xl p-5 max-h-[90%] overflow-y-auto no-scrollbar relative ${
-                isDarkMode ? "bg-zinc-950 text-white" : "bg-[#FAF8F5] text-amber-950"
+                isDarkMode ? "bg-[#11161D] text-white" : "bg-[#FAF8F5] text-amber-950"
               }`}
             >
-              <button 
-                onClick={handleCloseForm}
-                className="absolute right-4 top-4 p-1 rounded-full cursor-pointer hover:bg-black/10 text-current"
-              >
+              <div className="absolute right-4 top-4 p-1 cursor-pointer" onClick={() => setIsAddOpen(false)}>
                 <X size={18} />
-              </button>
+              </div>
 
-              <h2 className="font-display font-bold text-lg mb-4">
-                {editingEvent ? "Editar compromisso" : "Adicionar Agenda"}
-              </h2>
+              <h2 className="font-serif font-bold text-base mb-4 text-left">Novo Evento</h2>
 
-              <form onSubmit={handleAddSubmit} className="space-y-4 text-xs font-sans">
+              <form onSubmit={handleAddSubmit} className="space-y-4 text-xs text-left">
                 <div>
-                  <label className="block tracking-wide font-semibold opacity-75 mb-2 uppercase">Tipo Logístico</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {(["checkin", "checkout", "limpeza", "manutencao"] as const).map(t => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setNewEventType(t)}
-                        className={`py-2 rounded-lg border text-[10px] text-center font-bold cursor-pointer transition ${
-                          newEventType === t
-                            ? t === "checkout" ? "bg-orange-500/10 border-orange-500 text-orange-500"
-                              : t === "checkin" ? "bg-green-600/10 border-green-500 text-green-500"
-                              : t === "limpeza" ? "bg-yellow-500/12 border-yellow-500 text-yellow-500"
-                              : "bg-blue-600/10 border-blue-500 text-blue-500"
-                            : "border-neutral-500/20 text-neutral-400"
-                        }`}
-                      >
-                        {getEventNamePT(t)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block tracking-wider font-semibold uppercase opacity-75 mb-1">Casa Associada</label>
-                  <select
-                    value={newEventPropName}
-                    onChange={(e) => setNewEventPropName(e.target.value)}
-                    className={`w-full px-3 py-2.5 text-xs rounded-lg border focus:outline-none focus:border-[#C59B27] ${
-                      isDarkMode ? "bg-neutral-900 border-neutral-800" : "bg-white border-amber-200/50"
-                    }`}
-                  >
-                    {properties.map(p => (
-                      <option key={p.id} value={p.name}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block tracking-wider font-semibold uppercase opacity-75 mb-1">Horário Agendado</label>
-                    <input
-                      type="time"
-                      required
-                      value={newEventTime}
-                      onChange={(e) => setNewEventTime(e.target.value)}
-                      className={`w-full px-3 py-2.5 text-xs rounded-lg border focus:outline-none focus:border-[#C59B27] ${
-                        isDarkMode ? "bg-neutral-900 border-neutral-800" : "bg-white border-amber-200/50"
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block tracking-wider font-semibold uppercase opacity-75 mb-1">Data Agendamento</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={selectedDay.split("-")[2] + " / 05 / 2026"}
-                      className={`w-full px-3 py-2.5 text-xs rounded-lg border bg-neutral-500/10 opacity-70 cursor-not-allowed`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block tracking-wider font-semibold uppercase opacity-75 mb-1">Descrição / Detalhes</label>
+                  <label className="block tracking-wider font-semibold uppercase opacity-75 mb-1">Título do Evento</label>
                   <input
                     type="text"
                     required
-                    value={newEventDesc}
-                    onChange={(e) => setNewEventDesc(e.target.value)}
-                    placeholder="Ex: Entrega de chaves com recepção"
-                    className={`w-full px-3 py-2.5 text-xs rounded-lg border focus:outline-none focus:border-[#C59B27] ${
-                      isDarkMode ? "bg-[#1C1C1E] border-neutral-800" : "bg-white border-amber-200/50"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Ex: Entrega de Chaves"
+                    className={`w-full px-3 py-2.5 text-xs rounded-lg border focus:outline-none focus:border-[#C8A27A] ${
+                      isDarkMode ? "bg-black/20 border-neutral-800" : "bg-white border-stone-200"
                     }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block tracking-wider font-semibold uppercase opacity-75 mb-1">Observações / Instruções Especiais</label>
-                  <textarea
-                    rows={2}
-                    value={newEventNotes}
-                    onChange={(e) => setNewEventNotes(e.target.value)}
-                    placeholder="Ex: Código de acesso da fechadura digital é 4839."
-                    className={`w-full px-3 py-2 text-xs rounded-lg border focus:outline-none focus:border-[#C59B27] resize-none ${
-                      isDarkMode ? "bg-neutral-900 border-neutral-800" : "bg-white border-amber-200/50"
+                  <label className="block tracking-wider font-semibold uppercase opacity-75 mb-1">Horário (HH:MM)</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                    placeholder="Ex: 14:30"
+                    className={`w-full px-3 py-2.5 text-xs rounded-lg border focus:outline-none focus:border-[#C8A27A] ${
+                      isDarkMode ? "bg-black/20 border-neutral-800" : "bg-white border-stone-200"
                     }`}
                   />
                 </div>
 
-                <div className="pt-3.5 space-y-2">
+                <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-lg text-xs font-semibold tracking-wide text-white uppercase bg-gradient-to-r from-[#C29438] to-[#916B21] hover:brightness-110 shadow-lg cursor-pointer transition active:scale-95"
+                    className="w-full py-3 rounded-lg text-xs font-bold tracking-wide text-white uppercase bg-[#A97142] hover:bg-[#8e5c32] shadow-lg cursor-pointer"
                   >
-                    {editingEvent ? "Salvar Alterações" : "Confirmar Evento"}
+                    Salvar Evento
                   </button>
-
-                  {editingEvent && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (window.confirm("Deseja realmente deletar este compromisso do calendário?\nEsta ação não poderá ser revertida.")) {
-                          await onDeleteEvent(editingEvent.id);
-                          handleCloseForm();
-                        }
-                      }}
-                      className="w-full py-2.5 rounded-lg text-xs font-semibold tracking-wide text-red-500 hover:text-red-600 uppercase border border-red-500/25 dark:border-red-500/15 hover:bg-red-500/5 flex items-center justify-center space-x-2 cursor-pointer transition active:scale-95"
-                    >
-                      <Trash2 size={13} />
-                      <span>Excluir Evento</span>
-                    </button>
-                  )}
                 </div>
               </form>
             </motion.div>

@@ -26,7 +26,7 @@ interface Property { id: string; name: string; location: string; description: st
 interface User { id: string; name: string; username: string; password?: string; role: 'admin' | 'user'; }
 interface Revenue { id: string; propertyId: string; origin: PropertyOrigin; value: number; taxes: number; date: string; description: string; attachment?: string; }
 interface Expense { id: string; propertyId: string; category: ExpenseCategory; supplier: string; date: string; value: number; receipt?: string; paymentMethod: string; description: string; }
-interface Booking { id: string; propertyId: string; guestName: string; origin: PropertyOrigin; checkIn: string; checkOut: string; value: number; commission: number; status: BookingStatus; phone?: string; documents?: string[]; notes?: string; }
+interface Booking { id: string; propertyId: string; guestName: string; origin: PropertyOrigin; checkIn: string; checkOut: string; value: number; commission: number; status: BookingStatus; phone?: string; documents?: string[]; notes?: string; guestsCount?: number; selectedServices?: string[]; isRecurrent?: boolean; daysCount?: number; airbnbUrl?: string; }
 interface Asset { id: string; propertyId: string; name: string; category: AssetCategory; value: number; purchaseDate: string; warrantyUntil?: string; lifeSpanYears?: number; location?: string; photoUrl?: string; invoiceNumber?: string; }
 interface Maintenance { id: string; propertyId: string; title: string; type: MaintenanceType; status: MaintenanceStatus; date: string; cost: number; notes?: string; }
 interface SystemAlert { id: string; propertyId?: string; type: "warning" | "info" | "success" | "danger"; title: string; message: string; date: string; }

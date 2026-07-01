@@ -1,57 +1,20 @@
 import React from "react";
-import { DollarSign, TrendingUp, TrendingDown, Percent, BarChart3, Wallet } from "lucide-react";
+import { DollarSign, TrendingUp, Percent, BarChart3, Users, ClipboardCheck, Award, Layers } from "lucide-react";
 
 interface KPICardProps {
   title: string;
   value: string;
   diff: string;
   isPositive: boolean;
-  color: "green" | "red" | "orange" | "blue" | "purple";
+  sparklinePath: string;
+  color: string;
   icon: React.ElementType;
 }
 
-const colorMap = {
-  green: {
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-400",
-    gradient: "from-emerald-500/20 to-emerald-500/5",
-    border: "border-emerald-500/20",
-    bar: "bg-emerald-500",
-  },
-  red: {
-    bg: "bg-red-500/10",
-    text: "text-red-400",
-    gradient: "from-red-500/20 to-red-500/5",
-    border: "border-red-500/20",
-    bar: "bg-red-500",
-  },
-  orange: {
-    bg: "bg-amber-500/10",
-    text: "text-amber-400",
-    gradient: "from-amber-500/20 to-amber-500/5",
-    border: "border-amber-500/20",
-    bar: "bg-amber-500",
-  },
-  blue: {
-    bg: "bg-sky-500/10",
-    text: "text-sky-400",
-    gradient: "from-sky-500/20 to-sky-500/5",
-    border: "border-sky-500/20",
-    bar: "bg-sky-500",
-  },
-  purple: {
-    bg: "bg-purple-500/10",
-    text: "text-purple-400",
-    gradient: "from-purple-500/20 to-purple-500/5",
-    border: "border-purple-500/20",
-    bar: "bg-purple-500",
-  },
-};
-
 function KPIValue({ value }: { value: string }) {
-  const [display, setDisplay] = React.useState("R$ 0,00");
+  const [display, setDisplay] = React.useState("...");
   React.useEffect(() => {
-    const timer = setTimeout(() => setDisplay(value), 300);
+    const timer = setTimeout(() => setDisplay(value), 100);
     return () => clearTimeout(timer);
   }, [value]);
   return <>{display}</>;
@@ -62,7 +25,7 @@ export default function KPICards({
   despesasTotais,
   lucroLiquido,
   ocupacaoMedia = 78.5,
-  roiMedio = 24.7
+  roiMedio = 28.4
 }: {
   receitasTotais: number;
   despesasTotais: number;
@@ -70,84 +33,134 @@ export default function KPICards({
   ocupacaoMedia?: number;
   roiMedio?: number;
 }) {
-  // Ordered by priority: Receita, Lucro, Ocupação, Despesas, ROI
   const cards: KPICardProps[] = [
     {
       title: "Receita Total",
-      value: `R$ ${receitasTotais.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-      diff: "+12,5%",
+      value: `R$ ${receitasTotais.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`,
+      diff: "+18,6%",
       isPositive: true,
-      color: "green",
+      sparklinePath: "M0,25 Q15,10 30,20 T60,5 T100,15",
+      color: "#C8A27A", // Champagne Gold
       icon: DollarSign
     },
     {
       title: "Lucro Líquido",
-      value: `R$ ${lucroLiquido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-      diff: "+8,7%",
+      value: `R$ ${lucroLiquido.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`,
+      diff: "+24,1%",
       isPositive: true,
-      color: "purple",
+      sparklinePath: "M0,28 Q20,15 40,25 T70,5 T100,10",
+      color: "#34d399", // Emerald
       icon: TrendingUp
+    },
+    {
+      title: "Reservas do Mês",
+      value: "42",
+      diff: "+12,5%",
+      isPositive: true,
+      sparklinePath: "M0,20 Q20,25 40,10 T75,18 T100,5",
+      color: "#60a5fa", // Sky Blue
+      icon: ClipboardCheck
     },
     {
       title: "Taxa de Ocupação",
       value: `${ocupacaoMedia.toFixed(1)}%`,
       diff: "+5,1%",
       isPositive: true,
-      color: "blue",
+      sparklinePath: "M0,22 Q25,8 50,18 T100,5",
+      color: "#a855f7", // Purple
       icon: Percent
     },
     {
-      title: "Custos Totais",
-      value: `R$ ${despesasTotais.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-      diff: "-3,2%",
-      isPositive: false,
-      color: "orange",
-      icon: Wallet
+      title: "Diária Média",
+      value: "R$ 1.450",
+      diff: "+8,7%",
+      isPositive: true,
+      sparklinePath: "M0,15 Q30,22 60,8 T100,5",
+      color: "#fbbf24", // Gold Amber
+      icon: Layers
     },
     {
-      title: "ROI Médio",
+      title: "ROI Consolidado",
       value: `${roiMedio.toFixed(1)}%`,
-      diff: "+2,3%",
+      diff: "+3,2%",
       isPositive: true,
-      color: "green",
+      sparklinePath: "M0,25 Q30,30 60,12 T100,3",
+      color: "#C8A27A", // Champagne Gold
       icon: BarChart3
+    },
+    {
+      title: "Hóspedes Recorrentes",
+      value: "68%",
+      diff: "+6,4%",
+      isPositive: true,
+      sparklinePath: "M0,20 Q25,25 50,12 T100,8",
+      color: "#f43f5e", // Rose
+      icon: Award
+    },
+    {
+      title: "Reservas Diretas",
+      value: "35%",
+      diff: "+14,2%",
+      isPositive: true,
+      sparklinePath: "M0,25 Q20,12 50,22 T100,5",
+      color: "#10b981", // Teal
+      icon: Users
     }
   ];
 
   return (
-    <div id="kpi-cards-grid" className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 md:gap-4 w-full">
+    <div id="kpi-cards-grid" className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 w-full select-none">
       {cards.map((card, idx) => {
         const Icon = card.icon;
-        const c = colorMap[card.color];
 
         return (
           <div
             key={idx}
-            className="kpi-card kpi-card-fluid flex flex-col justify-between h-auto min-h-[140px] border border-slate-200/10 dark:border-slate-800/80 bg-gradient-to-br from-slate-900/60 to-slate-950/40 dark:from-slate-950/60 dark:to-slate-950/90 shadow-xl"
-            style={{ borderRadius: "24px" }}
+            className="kpi-card kpi-card-fluid flex flex-col justify-between h-auto min-h-[145px] border border-slate-200/10 dark:border-slate-800/80 bg-gradient-to-br from-white/70 to-white/30 dark:from-[#121922]/80 dark:to-[#121922]/40 shadow-sm transition-all duration-200"
+            style={{ borderRadius: "20px" }}
           >
             {/* Top: Title */}
             <div>
-              <span className="text-slate-400 text-[10px] xs:text-xs font-bold tracking-wide uppercase block mb-1">
+              <span className="text-slate-400 dark:text-slate-500 text-[9.5px] font-bold tracking-wider uppercase block mb-1">
                 {card.title}
               </span>
-              {/* Middle: Fluid Value */}
-              <h3 className="font-display font-black text-lg xs:text-xl sm:text-2xl text-white tracking-tight leading-none">
+              {/* Value */}
+              <h3 className="font-display font-bold text-sm sm:text-base text-slate-800 dark:text-white tracking-tight leading-none">
                 <KPIValue value={card.value} />
               </h3>
             </div>
 
+            {/* Sparkline Graphic */}
+            <div className="h-7 w-full my-2 opacity-80">
+              <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 30">
+                <path
+                  d={card.sparklinePath}
+                  fill="none"
+                  stroke={card.color}
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+
             {/* Bottom: Growth Indicator & Icon */}
-            <div className="flex items-end justify-between mt-3">
+            <div className="flex items-end justify-between mt-1">
               <div className="flex flex-col gap-0.5">
-                <div className={`flex items-center gap-1 text-[11px] font-extrabold ${card.isPositive ? c.text : "text-red-400"}`}>
+                <div className={`flex items-center gap-0.5 text-[9.5px] font-extrabold text-emerald-500`}>
                   {card.isPositive ? "↑" : "↓"} {card.diff}
                 </div>
-                <span className="text-[8px] text-slate-500 font-medium">vs. mês anterior</span>
+                <span className="text-[7.5px] text-slate-400 dark:text-slate-500">vs. mês ant.</span>
               </div>
               
-              <div className={`${c.bg} ${c.text} p-2 rounded-xl border ${c.border} flex items-center justify-center shrink-0`}>
-                <Icon size={14} strokeWidth={2.5} />
+              <div 
+                className="p-1.5 rounded-lg flex items-center justify-center shrink-0 border"
+                style={{ 
+                  backgroundColor: `${card.color}15`, 
+                  borderColor: `${card.color}30`,
+                  color: card.color
+                }}
+              >
+                <Icon size={12} strokeWidth={2.5} />
               </div>
             </div>
           </div>

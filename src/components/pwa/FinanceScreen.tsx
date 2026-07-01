@@ -24,7 +24,6 @@ interface FinanceScreenProps {
   onUpdateFinance: (id: string, updated: Partial<FinanceItem>) => Promise<void>;
   onDeleteFinance: (id: string) => Promise<void>;
   isDarkMode: boolean;
-  initialTab?: "Overview" | "Receitas" | "Despesas" | "OCR";
 }
 
 export default function FinanceScreen({ 
@@ -33,16 +32,9 @@ export default function FinanceScreen({
   onAddFinance, 
   onUpdateFinance, 
   onDeleteFinance, 
-  isDarkMode,
-  initialTab
+  isDarkMode 
 }: FinanceScreenProps) {
-  const [financeTab, setFinanceTab] = useState<"Overview" | "Receitas" | "Despesas" | "OCR">(initialTab || "OCR");
-
-  React.useEffect(() => {
-    if (initialTab) {
-      setFinanceTab(initialTab);
-    }
-  }, [initialTab]);
+  const [financeTab, setFinanceTab] = useState<"Overview" | "Receitas" | "Despesas" | "OCR">("OCR");
   const [filterCategory, setFilterCategory] = useState<string>("All");
   const [projectionScenario, setProjectionScenario] = useState<"conservador" | "moderado" | "otimista">("moderado");
   

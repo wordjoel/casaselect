@@ -83,7 +83,13 @@ export interface Booking {
   phone?: string;
   documents?: string[];
   notes?: string;
+  guestsCount?: number;
+  selectedServices?: string[];
+  isRecurrent?: boolean;
+  daysCount?: number;
+  airbnbUrl?: string;
 }
+
 
 export enum AssetCategory {
   MOVEIS = "Móveis",

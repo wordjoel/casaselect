@@ -38,16 +38,19 @@ import {
   CalendarDays,
   X,
   TrendingDown,
-  Trophy,
-  ExternalLink,
-  Download
+  Trophy
 } from "lucide-react";
-import { getProperties, getRevenues, getExpenses, getBookings, getAssets, getMaintenances, getSuppliers, getDocuments, changePassword } from "./data/api";
+import { getProperties, getRevenues, getExpenses, getBookings, getAssets, getMaintenances, getSuppliers, getDocuments, changePassword, setSessionToken } from "./data/api";
 import Sidebar from "./components/Sidebar";
 import KPICards from "./components/KPICards";
 import PropertyDetails from "./components/PropertyDetails";
 import { OCRScanner } from "./components/OCRScanner";
 import SenseiChat from "./components/SenseiChat";
+import GuestsCRM from "./components/GuestsCRM";
+import ReservasView from "./components/ReservasView";
+import FinanceiroView from "./components/FinanceiroView";
+import MarketingView from "./components/MarketingView";
+import { PublicVitrine } from "./components/PublicVitrine";
 const CommandCenter = React.lazy(() => import("./components/CommandCenter"));
 const ForecastView = React.lazy(() => import("./components/ForecastView"));
 const PWASimulator = React.lazy(() => import("./components/PWASimulator"));
@@ -61,7 +64,7 @@ import {
   addProperty, addRevenue, addExpense, addBooking, addAsset, addMaintenance, deleteExpense,
   updateProperty, deleteProperty, updateRevenue, deleteRevenue, updateExpense, updateBooking, deleteBooking,
   updateAsset, deleteAsset, updateMaintenance, deleteMaintenance, addSupplier, updateSupplier, deleteSupplier,
-  addDocument, updateDocument, deleteDocument, sendWhatsAppMessage
+  addDocument, updateDocument, deleteDocument, sendWhatsAppMessage, getWhatsAppSettings, saveWhatsAppSettings
 } from "./data/api";
 import { Property, Revenue, Expense, Booking, Asset, Maintenance, SystemAlert, PropertyOrigin, ExpenseCategory, AssetCategory, BookingStatus, MaintenanceStatus, MaintenanceType, Supplier, Document, User } from "./types";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, Cell, PieChart, Pie } from "recharts";
@@ -112,14 +115,7 @@ export default function App() {
   const [activeTab, setActiveTab] = React.useState<string>("dashboard");
   const [selectedPropertyId, setSelectedPropertyId] = React.useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState<boolean>(false);
-  const [currentUser, setCurrentUser] = React.useState<User | null>(() => {
-    try {
-      const saved = localStorage.getItem("casa_select_user");
-      const token = localStorage.getItem("casa_select_token");
-      if (saved && token) return JSON.parse(saved) as User;
-    } catch { /* ignore */ }
-    return null;
-  });
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [showDownloadModal, setShowDownloadModal] = React.useState<boolean>(false);
 
   // Check if URL matches /pwa/ceo, /pwa/comercial, /pwa/financeiro, or /pwa/administrativo
@@ -229,18 +225,9 @@ export default function App() {
   const [editingReminderId, setEditingReminderId] = React.useState<string | null>(null);
 
   // Settings states
-  const [companyName, setCompanyName] = React.useState<string>(() => localStorage.getItem("select_company_name") || "Casa Select");
+  const [companyName, setCompanyName] = React.useState<string>(() => localStorage.getItem("select_company_name") || "LI STAYS OS");
   const [defaultCurrency, setDefaultCurrency] = React.useState<string>(() => localStorage.getItem("select_default_currency") || "BRL");
   const [systemLanguage, setSystemLanguage] = React.useState<string>(() => localStorage.getItem("select_system_language") || "pt-BR");
-
-  // PWA configuration states
-  const [pwaUrl, setPwaUrl] = React.useState<string>(() => localStorage.getItem("select_pwa_url") || "https://kobayashi-property-os.vercel.app/pwa");
-  const [pwaVersion, setPwaVersion] = React.useState<string>(() => localStorage.getItem("select_pwa_version") || "2.1.4");
-  const [pwaManifest, setPwaManifest] = React.useState<string>(() => localStorage.getItem("select_pwa_manifest") || "/manifest.json");
-  const [pwaSplash, setPwaSplash] = React.useState<string>(() => localStorage.getItem("select_pwa_splash") || "/assets/splash.png");
-  const [pwaIcons, setPwaIcons] = React.useState<string>(() => localStorage.getItem("select_pwa_icons") || "192x192, 512x512");
-  const [pwaOtaEnabled, setPwaOtaEnabled] = React.useState<boolean>(() => localStorage.getItem("select_pwa_ota_enabled") !== "false");
-  const [pwaPublishStatus, setPwaPublishStatus] = React.useState<string>(() => localStorage.getItem("select_pwa_publish_status") || "publicado");
 
   // Search filter
   const [searchTerm, setSearchTerm] = React.useState<string>("");
@@ -281,13 +268,7 @@ export default function App() {
     localStorage.setItem("select_reminders", JSON.stringify(reminders));
   }, [reminders]);
 
-  const [webhookUrl, setWebhookUrl] = React.useState<string>(() => {
-    return localStorage.getItem("select_webhook_url") || "https://hook.us1.make.com/your-endpoint-here";
-  });
-
-  React.useEffect(() => {
-    localStorage.setItem("select_webhook_url", webhookUrl);
-  }, [webhookUrl]);
+  const [webhookUrl, setWebhookUrl] = React.useState<string>("https://hook.us1.make.com/your-endpoint-here");
 
   const [webhookLogs, setWebhookLogs] = React.useState<{
     time: string;
@@ -297,37 +278,28 @@ export default function App() {
     { time: "11:00:00", type: "info", message: "Sistema de integração de Webhooks/WhatsApp inicializado." }
   ]);
 
-  const [waApiType, setWaApiType] = React.useState<string>(() => {
-    return localStorage.getItem("select_wa_api_type") || "web";
-  });
-  const [waApiUrl, setWaApiUrl] = React.useState<string>(() => {
-    return localStorage.getItem("select_wa_api_url") || "";
-  });
-  const [waApiToken, setWaApiToken] = React.useState<string>(() => {
-    return localStorage.getItem("select_wa_api_token") || "";
-  });
-  const [waInstance, setWaInstance] = React.useState<string>(() => {
-    return localStorage.getItem("select_wa_instance") || "";
-  });
-  const [waClientToken, setWaClientToken] = React.useState<string>(() => {
-    return localStorage.getItem("select_wa_client_token") || "";
-  });
+  const [waApiType, setWaApiType] = React.useState<string>("web");
+  const [waApiUrl, setWaApiUrl] = React.useState<string>("");
+  const [waApiToken, setWaApiToken] = React.useState<string>("");
+  const [waInstance, setWaInstance] = React.useState<string>("");
+  const [waClientToken, setWaClientToken] = React.useState<string>("");
 
   React.useEffect(() => {
-    localStorage.setItem("select_wa_api_type", waApiType);
-  }, [waApiType]);
-  React.useEffect(() => {
-    localStorage.setItem("select_wa_api_url", waApiUrl);
-  }, [waApiUrl]);
-  React.useEffect(() => {
-    localStorage.setItem("select_wa_api_token", waApiToken);
-  }, [waApiToken]);
-  React.useEffect(() => {
-    localStorage.setItem("select_wa_instance", waInstance);
-  }, [waInstance]);
-  React.useEffect(() => {
-    localStorage.setItem("select_wa_client_token", waClientToken);
-  }, [waClientToken]);
+    if (currentUser) {
+      getWhatsAppSettings()
+        .then(settings => {
+          if (settings) {
+            if (settings.webhookUrl !== undefined) setWebhookUrl(settings.webhookUrl);
+            if (settings.waApiType !== undefined) setWaApiType(settings.waApiType);
+            if (settings.waApiUrl !== undefined) setWaApiUrl(settings.waApiUrl);
+            if (settings.waApiToken !== undefined) setWaApiToken(settings.waApiToken);
+            if (settings.waInstance !== undefined) setWaInstance(settings.waInstance);
+            if (settings.waClientToken !== undefined) setWaClientToken(settings.waClientToken);
+          }
+        })
+        .catch(err => console.error("Erro ao carregar configurações do WhatsApp:", err));
+    }
+  }, [currentUser]);
 
   const handleSendWhatsApp = async (phone: string, message: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
@@ -344,29 +316,24 @@ export default function App() {
     }
 
     setWebhookLogs(prev => [
-      { time: timestamp, type: "request", message: `Disparando WhatsApp via API (${waApiType}) para +${cleanPhone}...` },
+      { time: timestamp, type: "request", message: `Disparando WhatsApp via API para +${cleanPhone}...` },
       ...prev
     ]);
 
     try {
       const result = await sendWhatsAppMessage({
         phone: cleanPhone,
-        message: message,
-        apiType: waApiType,
-        apiUrl: waApiUrl,
-        apiToken: waApiToken,
-        instance: waInstance,
-        clientToken: waClientToken
+        message: message
       });
 
       if (result.success) {
         setWebhookLogs(prev => [
-          { time: timestamp, type: "success", message: `WhatsApp API (${waApiType}): ${result.message}` },
+          { time: timestamp, type: "success", message: `WhatsApp API: ${result.message}` },
           ...prev
         ]);
       } else {
         setWebhookLogs(prev => [
-          { time: timestamp, type: "error", message: `Erro WhatsApp API (${waApiType}): ${result.message}` },
+          { time: timestamp, type: "error", message: `Erro WhatsApp API: ${result.message}` },
           ...prev
         ]);
       }
@@ -436,7 +403,7 @@ export default function App() {
 
   // Form Field States
   const [formProperty, setFormProperty] = React.useState({
-    name: "", location: "", description: "", image: "", rooms: 3, sizeSqM: 150, stars: 5.0, bathrooms: 2, guests: 6, pricePerNight: 500
+    name: "", location: "", description: "", image: "", rooms: 3, sizeSqM: 150
   });
   const [formRevenue, setFormRevenue] = React.useState({
     propertyId: "", origin: PropertyOrigin.AIRBNB, value: 0, taxes: 0, date: "", description: ""
@@ -531,26 +498,11 @@ export default function App() {
           description: editItem.description,
           image: editItem.image || "",
           rooms: editItem.rooms || 3,
-          sizeSqM: editItem.sizeSqM || 120,
-          stars: editItem.stars !== undefined ? editItem.stars : 5.0,
-          bathrooms: editItem.bathrooms !== undefined ? editItem.bathrooms : 2,
-          guests: editItem.guests !== undefined ? editItem.guests : 6,
-          pricePerNight: editItem.pricePerNight !== undefined ? editItem.pricePerNight : 500
+          sizeSqM: editItem.sizeSqM || 120
         });
       } else {
         setEditingProperty(null);
-        setFormProperty({
-          name: "",
-          location: "",
-          description: "",
-          image: "",
-          rooms: 3,
-          sizeSqM: 150,
-          stars: 5.0,
-          bathrooms: 2,
-          guests: 6,
-          pricePerNight: 500
-        });
+        setFormProperty({ name: "", location: "", description: "", image: "", rooms: 3, sizeSqM: 150 });
       }
     } else if (type === "revenue") {
       if (editItem) {
@@ -668,44 +620,6 @@ export default function App() {
     }
   };
 
-  const handlePropertyImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        
-        const MAX_DIM = 1000;
-        if (width > MAX_DIM || height > MAX_DIM) {
-          if (width > height) {
-            height = Math.round((height * MAX_DIM) / width);
-            width = MAX_DIM;
-          } else {
-            width = Math.round((width * MAX_DIM) / height);
-            height = MAX_DIM;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-          setFormProperty(prev => ({ ...prev, image: compressedBase64 }));
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
   // Submit property
   const submitProperty = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -719,7 +633,7 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao sincronizar imóvel."); }
+    } catch (err: any) { alert(err.message || "Erro ao sincronizar imóvel."); }
   };
 
   // Submit revenue
@@ -734,7 +648,7 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao salvar lançamento de receita."); }
+    } catch (err: any) { alert(err.message || "Erro ao salvar lançamento de receita."); }
   };
 
   // Submit expense
@@ -749,7 +663,7 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao salvar lançamento de despesa."); }
+    } catch (err: any) { alert(err.message || "Erro ao salvar lançamento de despesa."); }
   };
 
   // Submit booking
@@ -764,7 +678,7 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao alocar reserva."); }
+    } catch (err: any) { alert(err.message || "Erro ao alocar reserva."); }
   };
 
   // Submit asset
@@ -779,7 +693,7 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao cadastrar patrimônio."); }
+    } catch (err: any) { alert(err.message || "Erro ao cadastrar patrimônio."); }
   };
 
   // Submit maintenance
@@ -794,7 +708,7 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao agendar manutenção."); }
+    } catch (err: any) { alert(err.message || "Erro ao agendar manutenção."); }
   };
 
   // Submit supplier
@@ -809,7 +723,7 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao salvar fornecedor."); }
+    } catch (err: any) { alert(err.message || "Erro ao salvar fornecedor."); }
   };
 
   // Submit document
@@ -824,75 +738,79 @@ export default function App() {
       }
       setModalType(null);
       refreshDatabase();
-    } catch (err) { alert("Erro ao salvar documento."); }
+    } catch (err: any) { alert(err.message || "Erro ao salvar documento."); }
   };
 
   const handleDeleteProperty = async (id: string) => {
     if (confirm("Deseja realmente remover este imóvel permanentemente? Isso apagará todas as despesas, receitas e reservas vinculadas a ele.")) {
-      await deleteProperty(id);
-      if (selectedPropertyId === id) setSelectedPropertyId(null);
-      refreshDatabase();
-    }
-  };
-
-  const handleUpdateProperty = async (id: string, updated: Partial<Property>) => {
-    try {
-      const prop = properties.find(p => p.id === id);
-      if (prop) {
-        await updateProperty({ ...prop, ...updated });
+      try {
+        await deleteProperty(id);
+        if (selectedPropertyId === id) setSelectedPropertyId(null);
         refreshDatabase();
-      }
-    } catch (err) {
-      alert("Erro ao atualizar propriedade.");
+      } catch (err: any) { alert(err.message || "Erro ao remover imóvel."); }
     }
   };
 
   const handleDeleteRevenue = async (id: string) => {
     if (confirm("Deseja realmente remover este faturamento permanentemente?")) {
-      await deleteRevenue(id);
-      refreshDatabase();
+      try {
+        await deleteRevenue(id);
+        refreshDatabase();
+      } catch (err: any) { alert(err.message || "Erro ao remover faturamento."); }
     }
   };
 
   const handleDeleteBooking = async (id: string) => {
     if (confirm("Deseja realmente cancelar e remover esta reserva permanentemente?")) {
-      await deleteBooking(id);
-      refreshDatabase();
+      try {
+        await deleteBooking(id);
+        refreshDatabase();
+      } catch (err: any) { alert(err.message || "Erro ao cancelar reserva."); }
     }
   };
 
   const handleDeleteAsset = async (id: string) => {
     if (confirm("Deseja realmente remover este patrimônio permanentemente?")) {
-      await deleteAsset(id);
-      refreshDatabase();
+      try {
+        await deleteAsset(id);
+        refreshDatabase();
+      } catch (err: any) { alert(err.message || "Erro ao remover patrimônio."); }
     }
   };
 
   const handleDeleteMaintenance = async (id: string) => {
     if (confirm("Deseja realmente remover este agendamento de manutenção permanentemente?")) {
-      await deleteMaintenance(id);
-      refreshDatabase();
+      try {
+        await deleteMaintenance(id);
+        refreshDatabase();
+      } catch (err: any) { alert(err.message || "Erro ao remover agendamento de manutenção."); }
     }
   };
 
   const handleDeleteSupplier = async (id: string) => {
     if (confirm("Deseja realmente descredenciar este fornecedor permanentemente?")) {
-      await deleteSupplier(id);
-      refreshDatabase();
+      try {
+        await deleteSupplier(id);
+        refreshDatabase();
+      } catch (err: any) { alert(err.message || "Erro ao remover fornecedor."); }
     }
   };
 
   const handleDeleteDocument = async (id: string) => {
     if (confirm("Deseja realmente remover este documento permanentemente?")) {
-      await deleteDocument(id);
-      refreshDatabase();
+      try {
+        await deleteDocument(id);
+        refreshDatabase();
+      } catch (err: any) { alert(err.message || "Erro ao remover documento."); }
     }
   };
 
   const handleDeleteExpense = async (id: string) => {
     if (confirm("Deseja realmente remover esta despesa permanentemente?")) {
-      await deleteExpense(id);
-      refreshDatabase();
+      try {
+        await deleteExpense(id);
+        refreshDatabase();
+      } catch (err: any) { alert(err.message || "Erro ao remover despesa."); }
     }
   };
 
@@ -1042,8 +960,7 @@ export default function App() {
               window.history.pushState({}, "", "/");
             }}
             darkMode={darkMode}
-            currentUser={currentUser}
-            onLogin={setCurrentUser}
+            currentUser={currentUser || { name: "Convidado", role: "user" }}
             isDirectRoute={true}
           />
         </React.Suspense>
@@ -1159,13 +1076,31 @@ export default function App() {
         userRole={currentUser?.role}
       />
 
-      <main id="app-workspace" className="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto bg-[#FAFAFA] dark:bg-[#050B14]">
+      <main 
+        id="app-workspace" 
+        className="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto relative bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/assets/login-bg-fixed.avif')",
+          backgroundAttachment: "fixed"
+        }}
+      >
+        {/* Translucent overlay backdrop for readability in light and dark modes */}
+        <div 
+          className="absolute inset-0 pointer-events-none z-0 backdrop-blur-[6px]"
+          style={{
+            background: darkMode ? "rgba(5, 11, 20, 0.88)" : "rgba(250, 250, 250, 0.90)"
+          }}
+        />
+
         {/* Top Premium Executive Header Bar */}
-        <header id="workspace-header" className="h-16 border-b border-slate-200 dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#08111F] px-4 md:px-6 shrink-0 sticky top-0 z-40 select-none">
+        <header id="workspace-header" className="h-16 border-b border-slate-200 dark:border-slate-800 bg-[#FAFAFA]/70 dark:bg-[#08111F]/70 backdrop-blur-md px-4 md:px-6 shrink-0 sticky top-0 z-40 select-none">
           {/* Desktop view header */}
           <div className="hidden md:flex w-full h-full items-center justify-between">
             <div className="flex items-center gap-3">
-              {/* Espaço reservado para manter o alinhamento flexbox */}
+              <div className="flex flex-col">
+                <span className="font-sans font-extrabold text-sm text-slate-800 dark:text-slate-100 leading-tight">Painel LI STAYS OS 👋</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Gestão inteligente das suas propriedades e hóspedes</span>
+              </div>
             </div>
 
             <div className="flex items-center gap-3.5 text-xs font-medium">
@@ -1252,7 +1187,7 @@ export default function App() {
                   Senha
                 </button>
                 <button 
-                  onClick={() => { localStorage.removeItem("casa_select_token"); localStorage.removeItem("casa_select_user"); setCurrentUser(null); }}
+                  onClick={() => { setSessionToken(null); setCurrentUser(null); }}
                   className="text-[10px] font-bold text-red-500/80 hover:text-red-500 pl-2 cursor-pointer"
                 >
                   Sair
@@ -1275,7 +1210,7 @@ export default function App() {
                 onClick={() => setHeaderExpanded(!headerExpanded)}
                 className="flex items-center gap-1.5 cursor-pointer active:opacity-75"
               >
-                <span className="font-display font-extrabold text-[14px] text-[#dfb26c] tracking-wide">Casa Select</span>
+                <span className="font-display font-extrabold text-[14px] text-[#dfb26c] tracking-wide">LI STAYS</span>
                 <span className="text-[10px] text-slate-500">▼</span>
               </div>
             </div>
@@ -1356,7 +1291,7 @@ export default function App() {
                 🔒 Trocar Senha
               </button>
               <button 
-                onClick={() => { localStorage.removeItem("casa_select_token"); localStorage.removeItem("casa_select_user"); setCurrentUser(null); setHeaderExpanded(false); }} 
+                onClick={() => { setSessionToken(null); setCurrentUser(null); setHeaderExpanded(false); }} 
                 className="flex-1 bg-red-500/10 hover:bg-red-500/25 border border-red-500/20 text-red-500 text-[10px] py-1.5 rounded-lg font-bold cursor-pointer"
               >
                 🚪 Sair da Conta
@@ -1373,7 +1308,7 @@ export default function App() {
         )}
 
         {/* Page Inner Container */}
-        <div id="main-scrollable-content" className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 pb-20">
+        <div id="main-scrollable-content" className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 pb-20 relative z-10">
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
@@ -1395,14 +1330,21 @@ export default function App() {
               onOpenQuickForm={handleOpenForm}
               onEditProperty={(property) => handleOpenForm("property", undefined, property)}
               onDeleteProperty={handleDeleteProperty}
-              userRole={currentUser?.role}
-              onUpdateProperty={handleUpdateProperty}
             />
           ) : (
             // Custom Active tab switch
             <>
               {activeTab === "dashboard" && (
                 <div id="tab-dashboard" className="space-y-6">
+                  {/* Executive Greeting */}
+                  <div className="mb-2 select-none">
+                    <h2 className="text-xl font-bold font-display tracking-tight text-slate-800 dark:text-white">
+                      Bem-vindo à Central LI STAYS
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-sans">
+                      Gestão inteligente das suas propriedades e hóspedes.
+                    </p>
+                  </div>
 
                   {/* Stats Row */}
                   <KPICards 
@@ -2048,15 +1990,13 @@ export default function App() {
                       <h2 className="font-display font-extrabold text-2xl text-white">Central de Propriedades</h2>
                       <p className="text-xs text-slate-400 mt-0.5">Gerencie o portfólio físico e acesse indicadores individuais de DRE.</p>
                     </div>
-                    {currentUser?.role === 'admin' && (
-                      <button
-                        id="btn-add-property"
-                        onClick={() => handleOpenForm("property")}
-                        className="bg-accent-purple hover:bg-accent-purple-hover text-white rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all"
-                      >
-                        + Novo Imóvel
-                      </button>
-                    )}
+                    <button
+                      id="btn-add-property"
+                      onClick={() => handleOpenForm("property")}
+                      className="bg-accent-purple hover:bg-accent-purple-hover text-white rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all"
+                    >
+                      + Novo Imóvel
+                    </button>
                   </div>
 
                   {/* ══ Hero Carousel ══ */}
@@ -2159,14 +2099,12 @@ export default function App() {
                               >
                                 Ver detalhes completos →
                               </button>
-                              {currentUser?.role === 'admin' && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleOpenForm("property", undefined, hp); }}
-                                  className="bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white text-xs font-semibold px-4 py-2 rounded-lg border border-slate-700/50 transition-all cursor-pointer backdrop-blur-sm"
-                                >
-                                  Editar
-                                </button>
-                              )}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleOpenForm("property", undefined, hp); }}
+                                className="bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white text-xs font-semibold px-4 py-2 rounded-lg border border-slate-700/50 transition-all cursor-pointer backdrop-blur-sm"
+                              >
+                                Editar
+                              </button>
                             </div>
                           </div>
 
@@ -2262,24 +2200,22 @@ export default function App() {
                                 <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border backdrop-blur-sm ${badgeColors}`}>{badgeLabel}</span>
                               </div>
                               {/* Edit/Delete hover actions */}
-                              {currentUser?.role === 'admin' && (
-                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleOpenForm("property", undefined, p); }}
-                                    className="p-1.5 bg-slate-950/80 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400 border border-slate-700/60 rounded-lg transition-all cursor-pointer backdrop-blur-sm"
-                                    title="Editar"
-                                  >
-                                    <Sparkles size={11} />
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p.id); }}
-                                    className="p-1.5 bg-slate-950/80 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700/60 rounded-lg transition-all cursor-pointer backdrop-blur-sm"
-                                    title="Excluir"
-                                  >
-                                    <Trash2 size={11} />
-                                  </button>
-                                </div>
-                              )}
+                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleOpenForm("property", undefined, p); }}
+                                  className="p-1.5 bg-slate-950/80 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400 border border-slate-700/60 rounded-lg transition-all cursor-pointer backdrop-blur-sm"
+                                  title="Editar"
+                                >
+                                  <Sparkles size={11} />
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p.id); }}
+                                  className="p-1.5 bg-slate-950/80 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700/60 rounded-lg transition-all cursor-pointer backdrop-blur-sm"
+                                  title="Excluir"
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              </div>
                             </div>
 
                             <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
@@ -2307,6 +2243,37 @@ export default function App() {
                       })}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === "reservas" && (
+                <div id="tab-reservas" className="animate-in fade-in duration-300">
+                  <ReservasView />
+                </div>
+              )}
+
+              {activeTab === "guests" && (
+                <div id="tab-guests" className="animate-in fade-in duration-300">
+                  <GuestsCRM />
+                </div>
+              )}
+
+              {activeTab === "financeiro" && (
+                <div id="tab-financeiro" className="animate-in fade-in duration-300">
+                  <FinanceiroView 
+                    properties={properties}
+                    revenues={revenues}
+                    expenses={expenses}
+                    bookings={bookings}
+                    assets={assets}
+                    maintenances={maintenances}
+                  />
+                </div>
+              )}
+
+              {activeTab === "marketing" && (
+                <div id="tab-marketing" className="animate-in fade-in duration-300">
+                  <MarketingView />
                 </div>
               )}
 
@@ -2690,7 +2657,7 @@ export default function App() {
                           const matchedProp = properties.find(p => p.id === r.propertyId);
                           return (
                             <tr key={r.id} className="hover:bg-slate-950/40">
-                              <td className="p-3.5 font-medium text-white">{matchedProp?.name || "Geral"}</td>
+                              <td className="p-3.5 font-medium text-white">{matchedProp?.name || "Desconhecido"}</td>
                               <td className="p-3.5">
                                 <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-semibold">{r.origin}</span>
                               </td>
@@ -2765,7 +2732,7 @@ export default function App() {
                           const matchedProp = properties.find(p => p.id === e.propertyId);
                           return (
                             <tr key={e.id} className="hover:bg-slate-950/40">
-                              <td className="p-3.5 font-medium text-white">{matchedProp?.name || "Geral"}</td>
+                              <td className="p-3.5 font-medium text-white">{matchedProp?.name || "Outro"}</td>
                               <td className="p-3.5">
                                 <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded text-[10px] font-semibold">{e.category}</span>
                               </td>
@@ -3075,6 +3042,12 @@ export default function App() {
                 </div>
               )}
 
+              {activeTab === "website" && (
+                <div id="tab-website" className="animate-in fade-in duration-350">
+                  <PublicVitrine properties={properties} />
+                </div>
+              )}
+
               {activeTab === "forecast" && (
                 <div id="tab-forecast">
                   <React.Suspense fallback={<div className="p-8 text-center text-slate-400 animate-pulse">Carregando previsões...</div>}>
@@ -3097,7 +3070,6 @@ export default function App() {
                       onClose={() => setActiveTab("dashboard")}
                       darkMode={darkMode}
                       currentUser={currentUser}
-                      onLogin={setCurrentUser}
                     />
                   </React.Suspense>
                 </div>
@@ -3114,233 +3086,6 @@ export default function App() {
                 </div>
               )}
 
-              {activeTab === "meu-app" && (
-                <div id="tab-meu-app" className="space-y-8 font-sans max-w-6xl mx-auto pb-12">
-                  <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
-                    <h2 className="font-display font-extrabold text-2xl text-slate-900 dark:text-white">Meu Aplicativo Mobile</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Acesse o escritório operacional da Casa Select otimizado para o seu smartphone ou tablet.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* Coluna 1: Metadados e Ações */}
-                    <div className="lg:col-span-7 space-y-6">
-                      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-                        <div className="space-y-2">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Aplicativo Pronto para Uso
-                          </span>
-                          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Experiência PWA Premium</h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                            O Casa Select PWA foi desenhado especificamente para quem opera no dia a dia. Gerencie propriedades, faça check-ins, registre despesas com OCR e acesse a inteligência artificial diretamente do seu celular.
-                          </p>
-                        </div>
-
-                        {/* Informações Técnicas do App */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-b border-slate-100 dark:border-slate-850 py-5">
-                          <div className="space-y-1">
-                            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Versão Atual</span>
-                            <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">{pwaVersion}</span>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Atualizações OTA</span>
-                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                              <span className={`w-2 h-2 rounded-full ${pwaOtaEnabled ? "bg-emerald-500" : "bg-rose-500"}`} />
-                              {pwaOtaEnabled ? "Habilitadas" : "Desativadas"}
-                            </span>
-                          </div>
-                          <div className="space-y-1 col-span-2 md:col-span-1">
-                            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Status</span>
-                            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                              {pwaPublishStatus === "publicado" ? "🟢 Em Produção" : "🟡 Homologação"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* URL e Endereço */}
-                        <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 rounded-2xl space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Endereço de Acesso</span>
-                            <span className="text-[9px] font-bold bg-[#dfb26c]/10 text-[#dfb26c] dark:text-[#dfb26c] px-2 py-0.5 rounded border border-[#dfb26c]/20 uppercase">PWA Padrão</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="text" 
-                              readOnly 
-                              value={pwaUrl} 
-                              className="w-full bg-transparent border-none p-0 text-xs font-mono text-slate-700 dark:text-slate-350 focus:ring-0 outline-none select-all" 
-                            />
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(pwaUrl);
-                                alert("Link copiado com sucesso!");
-                              }}
-                              className="text-[10px] hover:text-white bg-slate-200 hover:bg-[#dfb26c] dark:bg-slate-800 dark:hover:bg-[#dfb26c] hover:text-slate-950 text-slate-500 dark:text-slate-300 font-semibold px-2 py-1 rounded transition-all cursor-pointer"
-                            >
-                              Copiar
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Botões de Ação */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                          <a 
-                            href={pwaUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="flex items-center justify-center gap-2 bg-[#dfb26c] hover:bg-[#b89047] text-slate-950 font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-lg hover:shadow-[#dfb26c]/15 text-center cursor-pointer decoration-none"
-                          >
-                            <ExternalLink size={14} />
-                            ABRIR APLICATIVO
-                          </a>
-                          <button 
-                            onClick={() => setShowDownloadModal(true)}
-                            className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-850 dark:text-white font-bold py-3 px-4 rounded-xl text-xs transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
-                          >
-                            <Download size={14} />
-                            INSTALAR APP
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Benefícios Card */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl space-y-1.5 shadow-md">
-                          <div className="text-amber-500 bg-amber-500/10 w-8 h-8 rounded-lg flex items-center justify-center">
-                            <Zap size={16} />
-                          </div>
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Velocidade Máxima</h4>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">Arquitetura leve e inicialização ultrarrápida otimizada para conexões móveis de campo.</p>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl space-y-1.5 shadow-md">
-                          <div className="text-[#dfb26c] bg-[#dfb26c]/10 w-8 h-8 rounded-lg flex items-center justify-center">
-                            <Smartphone size={16} />
-                          </div>
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Modo PWA Nativo</h4>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">Adicione à tela de início sem consumir memória do seu celular e tenha visualização imersiva.</p>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl space-y-1.5 shadow-md">
-                          <div className="text-emerald-500 bg-emerald-500/10 w-8 h-8 rounded-lg flex items-center justify-center">
-                            <CheckCircle2 size={16} />
-                          </div>
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Sincronização Real</h4>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">Mesmo banco de dados unificado. Alterações refletem instantaneamente no painel web.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Coluna 2: Mockup do Celular */}
-                    <div className="lg:col-span-5 flex justify-center">
-                      <div className="relative w-[280px] h-[550px] bg-slate-950 rounded-[40px] border-4 border-slate-800 p-2.5 shadow-2xl flex flex-col justify-between overflow-hidden ring-1 ring-slate-700/50 animate-fadeIn">
-                        {/* Speaker Notch */}
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-800 rounded-b-2xl z-40 flex items-center justify-center">
-                          <div className="w-10 h-1.5 bg-slate-900 rounded-full" />
-                        </div>
-
-                        {/* Phone Screen Mock Content */}
-                        <div className="w-full h-full rounded-[30px] overflow-hidden bg-[#FAF8F5] dark:bg-black p-4 flex flex-col justify-between relative select-none">
-                          {/* Top Status Bar */}
-                          <div className="flex justify-between items-center text-[9px] font-bold text-slate-600 dark:text-slate-400 pt-1 pb-2">
-                            <span>15:43</span>
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                              <span>5G</span>
-                            </div>
-                          </div>
-
-                          {/* App Topbar */}
-                          <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-900 pb-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-5 h-5 bg-[#dfb26c]/20 border border-[#dfb26c]/30 rounded flex items-center justify-center text-[9px] font-extrabold text-[#dfb26c]">
-                                CS
-                              </div>
-                              <span className="font-display font-black text-xs text-amber-950 dark:text-white tracking-widest">CASA SELECT</span>
-                            </div>
-                            <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-900 flex items-center justify-center">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#dfb26c]" />
-                            </div>
-                          </div>
-
-                          {/* Content Body Mock */}
-                          <div className="flex-1 py-3 overflow-y-auto space-y-3.5 scrollbar-thin">
-                            {/* Greeting */}
-                            <div className="space-y-0.5">
-                              <span className="text-[9px] text-slate-500 dark:text-slate-400 flex items-center gap-0.5">Olá, {currentUser?.name || "Operacional"}</span>
-                              <h4 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                                Escritório de Campo
-                                <span className="animate-bounce">👋</span>
-                              </h4>
-                            </div>
-
-                            {/* Mini KPIs Grid */}
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="bg-white dark:bg-zinc-900/60 p-2 rounded-xl border border-slate-150 dark:border-zinc-800">
-                                <span className="text-[8px] text-slate-400 uppercase block font-semibold">Propriedades</span>
-                                <span className="text-xs font-extrabold text-slate-900 dark:text-white">{properties.length} Ativas</span>
-                              </div>
-                              <div className="bg-white dark:bg-zinc-900/60 p-2 rounded-xl border border-slate-150 dark:border-zinc-800">
-                                <span className="text-[8px] text-slate-400 uppercase block font-semibold">Ocupação</span>
-                                <span className="text-xs font-extrabold text-[#dfb26c]">88%</span>
-                              </div>
-                            </div>
-
-                            {/* Booking Quick View card */}
-                            <div className="bg-gradient-to-r from-slate-900 to-slate-950 text-white p-3 rounded-xl border border-slate-800 space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-[8px] font-semibold text-[#dfb26c] uppercase tracking-wider">Próximo Check-in</span>
-                                <span className="text-[7px] bg-[#dfb26c]/20 text-[#dfb26c] font-bold px-1 rounded">Hoje</span>
-                              </div>
-                              <div>
-                                <h5 className="text-[10px] font-bold leading-tight">Suíte Master Beira-Mar</h5>
-                                <p className="text-[8px] text-slate-400">Hóspede: Carlos Henrique +2</p>
-                              </div>
-                              <div className="flex justify-between text-[7px] text-slate-400 border-t border-slate-800 pt-1.5 mt-1">
-                                <span>Check-in: 14:00</span>
-                                <span>Ficha Preenchida ✅</span>
-                              </div>
-                            </div>
-
-                            {/* OCR Feature Promo Mock */}
-                            <div className="bg-[#dfb26c]/5 border border-[#dfb26c]/25 p-2.5 rounded-xl space-y-1">
-                              <div className="flex items-center gap-1 text-[#dfb26c]">
-                                <Sparkles size={10} />
-                                <span className="text-[8px] font-extrabold uppercase tracking-wider">Escaneador de Recibos IA</span>
-                              </div>
-                              <p className="text-[7.5px] text-slate-600 dark:text-slate-350 leading-relaxed">Tire foto das despesas na rua. A inteligência artificial extrai dados e sincroniza no mesmo banco.</p>
-                            </div>
-                          </div>
-
-                          {/* Navigation mock bar at bottom */}
-                          <div className="border-t border-slate-200 dark:border-slate-900 pt-2 pb-1 flex justify-around items-center text-slate-400 dark:text-slate-600 text-[8px] font-bold">
-                            <div className="flex flex-col items-center gap-0.5 text-[#dfb26c]">
-                              <Home size={11} />
-                              <span>Início</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-0.5">
-                              <Building2 size={11} />
-                              <span>Imóveis</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-0.5">
-                              <DollarSign size={11} />
-                              <span>Financeiro</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-0.5">
-                              <Sparkles size={11} />
-                              <span>IA Sensei</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Bottom Home Indicator Bar */}
-                        <div className="w-20 h-1 bg-slate-800 rounded-full mx-auto mt-1" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {activeTab === "settings" && currentUser?.role === 'admin' && (
                 <div id="tab-settings" className="space-y-6 font-sans">
                   <div className="border-b border-slate-800 pb-4">
@@ -3348,25 +3093,24 @@ export default function App() {
                     <p className="text-xs text-slate-400 mt-0.5">Sistemas de integração, contabilidade, metadados de API e chaves corporativas.</p>
                   </div>
 
-                  <form onSubmit={(e) => {
+                  <form onSubmit={async (e) => {
                     e.preventDefault();
                     localStorage.setItem("select_company_name", companyName);
                     localStorage.setItem("select_default_currency", defaultCurrency);
                     localStorage.setItem("select_system_language", systemLanguage);
-                    localStorage.setItem("select_webhook_url", webhookUrl);
-                    localStorage.setItem("select_wa_api_type", waApiType);
-                    localStorage.setItem("select_wa_api_url", waApiUrl);
-                    localStorage.setItem("select_wa_api_token", waApiToken);
-                    localStorage.setItem("select_wa_instance", waInstance);
-                    localStorage.setItem("select_wa_client_token", waClientToken);
-                    localStorage.setItem("select_pwa_url", pwaUrl);
-                    localStorage.setItem("select_pwa_version", pwaVersion);
-                    localStorage.setItem("select_pwa_manifest", pwaManifest);
-                    localStorage.setItem("select_pwa_splash", pwaSplash);
-                    localStorage.setItem("select_pwa_icons", pwaIcons);
-                    localStorage.setItem("select_pwa_ota_enabled", String(pwaOtaEnabled));
-                    localStorage.setItem("select_pwa_publish_status", pwaPublishStatus);
-                    alert("Configurações salvas com sucesso!");
+                    try {
+                      await saveWhatsAppSettings({
+                        webhookUrl,
+                        waApiType,
+                        waApiUrl,
+                        waApiToken,
+                        waInstance,
+                        waClientToken
+                      });
+                      alert("Configurações salvas com sucesso no backend seguro!");
+                    } catch (err: any) {
+                      alert("Erro ao salvar configurações no servidor: " + err.message);
+                    }
                   }} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
                     <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
                       <h3 className="text-sm font-bold text-white border-b border-slate-850 pb-2">Identidade Visual & Escopo</h3>
@@ -3503,92 +3247,6 @@ export default function App() {
                         </button>
                       </div>
                     </div>
-
-                    {/* Gestão do Aplicativo Mobile (Exclusivo Master) */}
-                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 md:col-span-2">
-                      <h3 className="text-sm font-bold text-white border-b border-slate-850 pb-2">Gestão do Aplicativo Mobile (Exclusivo Master)</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-500 uppercase block font-semibold">URL de Acesso do PWA</label>
-                          <input 
-                            type="text" 
-                            required 
-                            value={pwaUrl} 
-                            onChange={(e) => setPwaUrl(e.target.value)} 
-                            className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-mono" 
-                            placeholder="https://..." 
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-500 uppercase block font-semibold">Versão do Aplicativo</label>
-                          <input 
-                            type="text" 
-                            required 
-                            value={pwaVersion} 
-                            onChange={(e) => setPwaVersion(e.target.value)} 
-                            className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-mono" 
-                            placeholder="ex: 2.1.4" 
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-500 uppercase block font-semibold font-mono">Caminho do Manifest.json</label>
-                          <input 
-                            type="text" 
-                            required 
-                            value={pwaManifest} 
-                            onChange={(e) => setPwaManifest(e.target.value)} 
-                            className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-mono" 
-                            placeholder="/manifest.json" 
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-500 uppercase block font-semibold">Splash Screen (URL/Asset)</label>
-                          <input 
-                            type="text" 
-                            required 
-                            value={pwaSplash} 
-                            onChange={(e) => setPwaSplash(e.target.value)} 
-                            className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-mono" 
-                            placeholder="/assets/splash.png" 
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-slate-500 uppercase block font-semibold">Tamanhos de Ícones Suportados</label>
-                          <input 
-                            type="text" 
-                            required 
-                            value={pwaIcons} 
-                            onChange={(e) => setPwaIcons(e.target.value)} 
-                            className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-mono" 
-                            placeholder="192x192, 512x512" 
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-[10px] text-slate-500 uppercase block font-semibold">Atualização OTA</label>
-                            <select 
-                              value={String(pwaOtaEnabled)} 
-                              onChange={(e) => setPwaOtaEnabled(e.target.value === "true")} 
-                              className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-sans"
-                            >
-                              <option value="true">Ativa (OTA Habilitado)</option>
-                              <option value="false">Desabilitada</option>
-                            </select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] text-slate-500 uppercase block font-semibold">Status de Publicação</label>
-                            <select 
-                              value={pwaPublishStatus} 
-                              onChange={(e) => setPwaPublishStatus(e.target.value)} 
-                              className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-sans"
-                            >
-                              <option value="publicado">Publicado (Produção)</option>
-                              <option value="rascunho">Rascunho / Homologação</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </form>
 
                   {/* Webhooks & WhatsApp logs console inside settings */}
@@ -3676,40 +3334,37 @@ export default function App() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Foto da Propriedade (Link ou Imagem Local)</label>
+                  <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Foto da Propriedade</label>
                   <div className="flex gap-2">
                     <input 
                       type="text" 
                       value={formProperty.image} 
                       onChange={(e) => setFormProperty({ ...formProperty, image: e.target.value })} 
-                      className="flex-1 bg-slate-950 border border-slate-850 p-2 rounded text-white font-mono text-xs focus:outline-none focus:border-accent-purple" 
+                      className="flex-1 bg-slate-950 border border-slate-850 p-2 rounded text-white font-mono text-xs" 
                       placeholder="/assets/foto.png ou https://..." 
                     />
-                    <label className="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5 shrink-0 border border-slate-750 select-none">
-                      <span>📁</span> Local
+                    <label className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer shrink-0 flex items-center justify-center">
+                      <span>Upload</span>
                       <input 
                         type="file" 
                         accept="image/*" 
-                        onChange={handlePropertyImageUpload} 
                         className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setFormProperty({ ...formProperty, image: reader.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }} 
                       />
                     </label>
                   </div>
-                  
                   {formProperty.image && (
-                    <div className="mt-2 relative border border-slate-850 rounded-lg overflow-hidden bg-slate-950 p-1">
-                      <span className="text-[9px] text-slate-500 font-mono block uppercase mb-1">Pré-visualização</span>
-                      <div className="h-28 w-full rounded-md overflow-hidden bg-slate-900 flex items-center justify-center relative">
-                        <img src={formProperty.image} alt="Preview" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => setFormProperty({ ...formProperty, image: "" })}
-                          className="absolute right-2 top-2 bg-red-650 hover:bg-red-700 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs cursor-pointer border border-red-500/20 shadow-md font-bold"
-                          title="Remover foto"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                    <div className="mt-2 w-20 h-14 rounded-lg overflow-hidden border border-slate-800">
+                      <img src={formProperty.image} className="w-full h-full object-cover" alt="Preview" />
                     </div>
                   )}
                 </div>
@@ -3722,26 +3377,6 @@ export default function App() {
                   <div className="space-y-1">
                     <label className="text-[10px] text-slate-500 uppercase block">Tamanho m²</label>
                     <input type="number" value={formProperty.sizeSqM} onChange={(e) => setFormProperty({ ...formProperty, sizeSqM: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white font-mono text-xs" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-500 uppercase block">Avaliação (Estrelas)</label>
-                    <input type="number" step="0.05" min="0" max="5" value={formProperty.stars} onChange={(e) => setFormProperty({ ...formProperty, stars: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white font-mono text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-500 uppercase block">Preço por Noite (R$)</label>
-                    <input type="number" step="1" value={formProperty.pricePerNight} onChange={(e) => setFormProperty({ ...formProperty, pricePerNight: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white font-mono text-xs" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-500 uppercase block">Banheiros</label>
-                    <input type="number" value={formProperty.bathrooms} onChange={(e) => setFormProperty({ ...formProperty, bathrooms: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white font-mono text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-500 uppercase block">Hóspedes Permitidos</label>
-                    <input type="number" value={formProperty.guests} onChange={(e) => setFormProperty({ ...formProperty, guests: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white font-mono text-xs" />
                   </div>
                 </div>
                 <div className="flex gap-2 pt-2">
@@ -3759,7 +3394,6 @@ export default function App() {
                 <div className="space-y-1">
                   <label className="text-[10px] text-slate-500 uppercase block font-mono">Imóvel</label>
                   <select value={formRevenue.propertyId} onChange={(e) => setFormRevenue({ ...formRevenue, propertyId: e.target.value })} className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-sans">
-                    <option value="geral">Geral (Fundo Comum)</option>
                     {properties.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
@@ -3806,7 +3440,6 @@ export default function App() {
                 <div className="space-y-1">
                   <label className="text-[10px] text-slate-500 uppercase block font-mono">Imóvel Destino</label>
                   <select value={formExpense.propertyId} onChange={(e) => setFormExpense({ ...formExpense, propertyId: e.target.value })} className="w-full bg-slate-950 border border-slate-850 p-2 rounded text-white text-xs font-sans">
-                    <option value="geral">Geral (Fundo Comum)</option>
                     {properties.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}

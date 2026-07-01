@@ -26,6 +26,57 @@ interface IncomeTaxViewProps {
   darkMode?: boolean;
 }
 
+// Helper to map OCR returned category text dynamically to ExpenseCategory
+const mapCategory = (ocrCat?: string): ExpenseCategory => {
+  if (!ocrCat) return ExpenseCategory.TAXAS;
+  const normalized = ocrCat.trim().toLowerCase();
+  
+  // Try direct match with values
+  const matchedValue = Object.values(ExpenseCategory).find(
+    val => val.toLowerCase() === normalized
+  );
+  if (matchedValue) return matchedValue;
+
+  // Try matching keys
+  const matchedKey = Object.keys(ExpenseCategory).find(
+    key => key.toLowerCase() === normalized
+  ) as keyof typeof ExpenseCategory | undefined;
+  if (matchedKey && ExpenseCategory[matchedKey]) return ExpenseCategory[matchedKey];
+
+  // Pattern matching
+  if (normalized.includes("manutenc") || normalized.includes("reforma") || normalized.includes("conserto")) return ExpenseCategory.MANUTENCAO;
+  if (normalized.includes("piscina")) return ExpenseCategory.PISCINA;
+  if (normalized.includes("limp") || normalized.includes("faxina") || normalized.includes("diarista")) return ExpenseCategory.LIMPEZA;
+  if (normalized.includes("func") || normalized.includes("salario") || normalized.includes("folha")) return ExpenseCategory.FUNCIONARIOS;
+  if (normalized.includes("internet") || normalized.includes("wifi") || normalized.includes("telef")) return ExpenseCategory.INTERNET;
+  if (normalized.includes("agua")) return ExpenseCategory.AGUA;
+  if (normalized.includes("energia") || normalized.includes("luz") || normalized.includes("coelba") || normalized.includes("enel")) return ExpenseCategory.ENERGIA;
+  if (normalized.includes("jard")) return ExpenseCategory.JARDINAGEM;
+  if (normalized.includes("aliment") || normalized.includes("supermercado")) return ExpenseCategory.ALIMENTACAO;
+  if (normalized.includes("movel") || normalized.includes("moveis")) return ExpenseCategory.MOVEIS;
+  if (normalized.includes("uten")) return ExpenseCategory.UTENSILIOS;
+  if (normalized.includes("eletro")) return ExpenseCategory.ELETRONICOS;
+  if (normalized.includes("comis")) return ExpenseCategory.COMISSOES;
+  if (normalized.includes("iptu") || normalized.includes("imposto") || normalized.includes("irpf") || normalized.includes("darf")) return ExpenseCategory.IMPOSTOS;
+  if (normalized.includes("taxa")) return ExpenseCategory.TAXAS;
+
+  return ExpenseCategory.TAXAS;
+};
+
+// Helper to escape values for CSV generation to avoid injection and formatting bugs
+const escapeCSVField = (val: any): string => {
+  if (val === null || val === undefined) return '""';
+  let str = String(val);
+  
+  // Prevent CSV Injection (Formula Injection)
+  if (str.startsWith("=") || str.startsWith("+") || str.startsWith("-") || str.startsWith("@")) {
+    str = "'" + str;
+  }
+  
+  // Escape double quotes by doubling them and wrap in double quotes
+  return `"${str.replace(/"/g, '""')}"`;
+};
+
 // Progressive tax table brackets for monthly calculation (2026 Table)
 const calculateMonthlyTax = (taxableIncome: number): number => {
   if (taxableIncome <= 2259.20) return 0;
@@ -34,6 +85,7 @@ const calculateMonthlyTax = (taxableIncome: number): number => {
   if (taxableIncome <= 4664.68) return (taxableIncome * 0.225) - 662.92;
   return (taxableIncome * 0.275) - 896.15;
 };
+
 
 export default function IncomeTaxView({ properties, revenues, expenses, onDataChanged, darkMode = true }: IncomeTaxViewProps) {
   const [selectedYear, setSelectedYear] = React.useState<number>(2026);
@@ -156,49 +208,37 @@ export default function IncomeTaxView({ properties, revenues, expenses, onDataCh
         e.value.toFixed(2),
         isDeductible(e) ? "Sim" : "Não",
         e.paymentMethod,
-        e.description.replace(/,/g, ";"),
+        e.description,
         e.receipt ? "Sim" : "Não"
-      ];
+      ].map(escapeCSVField).join(",");
     });
 
-    // Include revenues in second sheet or list
     const revenueRows = filteredRevenues.map(r => {
       const prop = properties.find(p => p.id === r.propertyId);
       return [
         r.id,
         r.date,
         prop?.name || "Geral",
-        `Recebimento - ${r.origin}`,
-        "Receita de Aluguel",
-        r.value.toFixed(2),
-        "N/A",
-        "-",
-        r.description.replace(/,/g, ";"),
-        r.attachment ? "Sim" : "Não"
-      ];
-    });
-
-    const csvContent = "\uFEFF" + [
-      ["DECLARAÇÃO DE DESPESAS E RECEBIMENTOS PARA IMPOSTO DE RENDA - " + selectedYear].join(","),
-      ["Filtro Imóvel: " + (selectedPropertyId === "all" ? "Todos" : properties.find(p => p.id === selectedPropertyId)?.name)].join(","),
-      [],
-      ["RECEITAS / RENDIMENTOS DE TEMPORADA"].join(","),
-      ["ID Lançamento", "Data", "Imóvel", "Origem", "Categoria", "Valor Recebido", "Imposto/Retenção", "Forma", "Descrição"].join(","),
-      ...filteredRevenues.map(r => [
-        r.id,
-        r.date,
-        properties.find(p => p.id === r.propertyId)?.name || "Geral",
         r.origin,
         "Diárias de Aluguel",
         r.value.toFixed(2),
         r.taxes.toFixed(2),
         "Canal",
-        r.description.replace(/,/g, ";")
-      ].join(",")),
+        r.description
+      ].map(escapeCSVField).join(",");
+    });
+
+    const csvContent = "\uFEFF" + [
+      [escapeCSVField("DECLARAÇÃO DE DESPESAS E RECEBIMENTOS PARA IMPOSTO DE RENDA - " + selectedYear)].join(","),
+      [escapeCSVField("Filtro Imóvel: " + (selectedPropertyId === "all" ? "Todos" : properties.find(p => p.id === selectedPropertyId)?.name))].join(","),
       [],
-      ["DESPESAS DEDUTÍVEIS & NÃO DEDUTÍVEIS"].join(","),
-      headers.join(","),
-      ...rows.map(row => row.join(","))
+      [escapeCSVField("RECEITAS / RENDIMENTOS DE TEMPORADA")].join(","),
+      ["ID Lançamento", "Data", "Imóvel", "Origem", "Categoria", "Valor Recebido", "Imposto/Retenção", "Forma", "Descrição"].map(escapeCSVField).join(","),
+      ...revenueRows,
+      [],
+      [escapeCSVField("DESPESAS DEDUTÍVEIS & NÃO DEDUTÍVEIS")].join(","),
+      headers.map(escapeCSVField).join(","),
+      ...rows
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -229,7 +269,7 @@ export default function IncomeTaxView({ properties, revenues, expenses, onDataCh
         // Save scanned expense to DB
         await addExpense({
           propertyId: ocrData.propertyId || properties[0]?.id || "casa-lilian",
-          category: ExpenseCategory.TAXAS,
+          category: mapCategory(ocrData.category),
           supplier: ocrData.supplier || "Diversos (IR)",
           date: ocrData.date || new Date().toISOString().split("T")[0],
           value: Number(ocrData.value) || 0,

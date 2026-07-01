@@ -76,7 +76,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     name: "Casa 49",
     location: "Granja Viana, SP",
     description: "Arquitetura moderna e iluminação que exalta cada detalhe. Fachada imponente em condomínio de alto padrão.",
-    image: "/assets/casa-49.png",
+    image: "/assets/casa-49.jpg",
     stars: 5.0,
     rooms: 5,
     sizeSqM: 650
@@ -86,7 +86,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     name: "Casa 512",
     location: "Granja Viana — Brasil",
     description: "A mansão mais luxuosa da Granja Viana",
-    image: "/assets/casa-512.png",
+    image: "/assets/casa-512.jpg",
     stars: 5.0,
     rooms: 4,
     bathrooms: 7,
@@ -119,6 +119,58 @@ export const INITIAL_PROPERTIES: Property[] = [
     guests: 12,
     pricePerNight: 1450,
     sizeSqM: 500
+  },
+  {
+    id: "angra",
+    name: "Casa em Angra",
+    location: "Angra dos Reis, RJ",
+    description: "Mansão espetacular com heliponto e deck para atracação de iates.",
+    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=400&q=80",
+    stars: 4.8,
+    rooms: 5,
+    bathrooms: 6,
+    guests: 10,
+    pricePerNight: 8500,
+    sizeSqM: 650
+  },
+  {
+    id: "jk",
+    name: "Apartamento JK",
+    location: "São Paulo, SP",
+    description: "Flat executivo premium no coração financeiro, finamente decorado.",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=400&q=80",
+    stars: 4.7,
+    rooms: 2,
+    bathrooms: 2,
+    guests: 4,
+    pricePerNight: 1200,
+    sizeSqM: 90
+  },
+  {
+    id: "boa-vista",
+    name: "Fazenda Boa Vista",
+    location: "Porto Feliz, SP",
+    description: "Casa de campo cinematográfica no condomínio de luxo Fazenda Boa Vista.",
+    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=80",
+    stars: 4.9,
+    rooms: 6,
+    bathrooms: 7,
+    guests: 14,
+    pricePerNight: 12000,
+    sizeSqM: 800
+  },
+  {
+    id: "itaim",
+    name: "Cobertura Itaim",
+    location: "São Paulo, SP",
+    description: "Cobertura duplex de altíssimo padrão com piscina privativa e vista 360.",
+    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=400&q=80",
+    stars: 4.8,
+    rooms: 4,
+    bathrooms: 5,
+    guests: 8,
+    pricePerNight: 6700,
+    sizeSqM: 420
   }
 ];
 

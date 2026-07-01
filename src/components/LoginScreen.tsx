@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Lock, User as UserIcon, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "../data/api";
 import { User, Property } from "../types";
-import { KobayashiLogo } from "./Sidebar";
+import { LiStaysLogo } from "./Sidebar";
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
@@ -32,12 +32,19 @@ export function LoginScreen({ onLogin, darkMode }: LoginScreenProps) {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center relative overflow-hidden bg-cover bg-center"
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
       style={{ 
-        backgroundColor: darkMode ? "#0a0a0a" : "#FDFBF7",
-        backgroundImage: `url('/assets/${darkMode ? "login-bg-alt.jpg" : "login-bg-light.jpg"}')`
+        backgroundColor: darkMode ? "#0a0a0a" : "#FDFBF7"
       }}
     >
+      {/* Fixed Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center pointer-events-none"
+        style={{
+          backgroundImage: "url('/assets/login-bg-fixed.avif')"
+        }}
+      />
+
       {/* Véu Translúcido (Glassmorphism) sobre a foto para dar requinte e sofisticação */}
       <div className="absolute inset-0 pointer-events-none backdrop-blur-md" 
            style={{ background: darkMode ? "rgba(10,12,18,0.55)" : "rgba(253,251,247,0.30)" }} />
@@ -214,24 +221,8 @@ export function LoginScreen({ onLogin, darkMode }: LoginScreenProps) {
           }}
         >
           {/* Logo + Nome */}
-          <div className="flex flex-col items-center mb-5 select-none">
-            <KobayashiLogo darkMode={false} className="w-14 h-14 mb-3 drop-shadow" />
-            <h1
-              className="text-xl font-bold text-center tracking-tight"
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                color: "#b89047",
-              }}
-            >
-              Casa Select
-            </h1>
-            {/* Linha separadora dourada */}
-            <div style={{
-              marginTop: "8px",
-              width: "40px", height: "1.5px",
-              background: "linear-gradient(90deg, transparent, #dfb26c 40%, #f0d898 60%, transparent)",
-              borderRadius: "99px",
-            }} />
+          <div className="flex flex-col items-center mb-6 select-none">
+            <LiStaysLogo className="w-32 h-32 filter drop-shadow-[0_8px_24px_rgba(200,162,122,0.25)] border border-[#E6C687]/30 hover:scale-[1.02] transition-transform duration-300" />
           </div>
 
           <form onSubmit={handleSubmit} className="w-full space-y-3">
@@ -262,7 +253,7 @@ export function LoginScreen({ onLogin, darkMode }: LoginScreenProps) {
                   backdropFilter: "blur(8px)",
                   boxShadow: "0 1px 0 rgba(255,255,255,0.55) inset",
                 }}
-                placeholder="Ex: hugo" required
+                placeholder="Ex: admin ou iury" required
                 onFocus={(e) => {
                   e.target.style.border = "1px solid rgba(184,144,71,0.70)";
                   e.target.style.boxShadow = "0 1px 0 rgba(255,255,255,0.70) inset, 0 0 0 3px rgba(184,144,71,0.09)";
@@ -351,8 +342,9 @@ export function LoginScreen({ onLogin, darkMode }: LoginScreenProps) {
             style={{ borderTop: "1px solid rgba(184,144,71,0.14)" }}>
             <p className="text-xs leading-relaxed"
               style={{ color: "#B0A090", fontFamily: "Inter, sans-serif" }}>
-              Perfis: admin, hugo, katia, mariana, rubens<br />
-              Senha padrão: mudar123 (admin: admin123)
+              Acesso de Desenvolvimento:<br />
+              Administrador: admin (senha: admin)<br />
+              Colaborador: iury (senha: iury)
             </p>
           </div>
         </div>

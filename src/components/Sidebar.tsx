@@ -18,6 +18,10 @@ import {
   Percent,
   Smartphone,
   PieChart,
+  Megaphone,
+  UserCheck,
+  ClipboardList,
+  Globe,
   X
 } from "lucide-react";
 
@@ -31,48 +35,16 @@ interface SidebarProps {
   userRole?: string;
 }
 
-export function KobayashiLogo({ darkMode, className = "w-10 h-10 shrink-0" }: { darkMode: boolean; className?: string }) {
-  const goldColor = "#dfb26c";
-  const brandColor = darkMode ? goldColor : "#b89047";
-
+export function LiStaysLogo({ className = "w-10 h-10 shrink-0" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Outer Shield */}
-      <path
-        d="M 50 14 L 80 22 L 80 56 C 80 72, 62 82, 50 86 C 38 82, 20 72, 20 56 L 20 22 Z"
-        stroke={brandColor}
-        strokeWidth="4.5"
-        strokeLinejoin="round"
-        fill="none"
+    <div className={`overflow-hidden rounded-full bg-[#FFFDF9] border border-[#E6C687] flex items-center justify-center shrink-0 ${className}`}>
+      <img 
+        src="/logo.jpg" 
+        alt="L | STAYS Emblem" 
+        className="w-[180%] max-w-none h-auto object-cover object-left"
+        style={{ marginLeft: "-4%" }}
       />
-      {/* Intertwined CS Monogram */}
-      <g transform="translate(0, 3)">
-        {/* C letter */}
-        <text
-          x="38"
-          y="62"
-          fontFamily="'Playfair Display', Georgia, serif"
-          fontSize="42"
-          fontWeight="900"
-          fill={brandColor}
-          textAnchor="middle"
-        >
-          C
-        </text>
-        {/* S letter */}
-        <text
-          x="59"
-          y="66"
-          fontFamily="'Playfair Display', Georgia, serif"
-          fontSize="42"
-          fontWeight="900"
-          fill={brandColor}
-          textAnchor="middle"
-        >
-          S
-        </text>
-      </g>
-    </svg>
+    </div>
   );
 }
 
@@ -100,7 +72,6 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenMobilePWA, dark
 
   const onTouchEnd = () => {
     const diffX = touchStartX.current - touchCurrentX.current;
-    // Swipe left to close menu
     if (diffX > 50 && onClose) {
       onClose();
     }
@@ -108,22 +79,24 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenMobilePWA, dark
 
   const mainNavItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "reservas", label: "Reservas", icon: ClipboardList },
+    { id: "guests", label: "Hóspedes", icon: UserCheck },
     { id: "properties", label: "Propriedades", icon: Building2 },
     { id: "calendar", label: "Calendário", icon: Calendar },
   ];
 
   const financeSubItems = [
-    { id: "expenses", label: "Despesas", icon: TrendingDown },
     { id: "revenues", label: "Receitas", icon: TrendingUp },
+    { id: "expenses", label: "Despesas", icon: TrendingDown },
+    { id: "maintenance", label: "Manutenções", icon: Wrench },
+    { id: "suppliers", label: "Fornecedores", icon: Users },
+    { id: "reports", label: "Relatórios", icon: BarChart3 },
   ];
 
   const bottomNavItems = [
-    { id: "assets", label: "Ativos", icon: Boxes },
-    { id: "maintenance", label: "Manutenções", icon: Wrench },
-    { id: "suppliers", label: "Fornecedores", icon: Users },
-    { id: "income-tax", label: "Imposto de Renda", icon: Percent },
-    { id: "reports", label: "Relatórios", icon: BarChart3 },
-    { id: "ai-bot", label: "IA SelectSENSEI", icon: Sparkles, badge: "BETA" },
+    { id: "marketing", label: "Marketing", icon: Megaphone },
+    { id: "website", label: "Website de Reservas", icon: Globe, badge: "SITE" },
+    { id: "ai-bot", label: "LI Concierge AI", icon: Sparkles, badge: "AI" },
     { id: "documents", label: "Documentos", icon: FileText },
     ...(userRole === "admin" ? [{ id: "settings", label: "Configurações", icon: Settings }] : []),
   ];
@@ -143,16 +116,19 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenMobilePWA, dark
           indented ? "ml-6 w-[calc(100%-1.5rem)]" : ""
         } ${
           isActive 
-            ? "bg-accent-purple/15 text-white font-semibold" 
+            ? "bg-accent-purple/15 text-[#C8A27A] border border-[#C8A27A]/30 font-semibold" 
             : "text-slate-400 hover:text-slate-200"
         }`}
+        style={{
+          boxShadow: isActive ? "0 0 12px rgba(200, 162, 122, 0.15)" : "none"
+        }}
       >
         <div className="flex items-center gap-3">
-          <Icon size={17} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? "text-white" : "text-slate-500"} />
+          <Icon size={17} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? "text-[#C8A27A]" : "text-slate-500"} />
           <span>{item.label}</span>
         </div>
         {item.badge && (
-          <span className="font-sans font-bold bg-[#b89047] text-[7px] text-white px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm shadow-amber-950/25">
+          <span className="font-sans font-bold bg-[#C8A27A] text-[7.5px] text-[#111111] px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">
             {item.badge}
           </span>
         )}
@@ -197,14 +173,14 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenMobilePWA, dark
             </button>
           )}
 
-          <div className="mb-4">
-            <KobayashiLogo darkMode={darkMode} className="w-16 h-16 shrink-0 filter drop-shadow-[0_4px_12px_rgba(223,178,108,0.2)]" />
+          <div className="mb-3">
+            <LiStaysLogo className="w-14 h-14 shrink-0 filter drop-shadow-[0_4px_12px_rgba(200,162,122,0.15)]" />
           </div>
-          <h1 className="font-display font-extrabold text-base tracking-[0.15em] text-[#dfb26c] leading-none">
-            CASA SELECT
+          <h1 className="font-display font-extrabold text-base tracking-[0.18em] text-[#C8A27A] leading-none">
+            LI STAYS
           </h1>
-          <p className="text-[8px] uppercase tracking-[0.25em] text-[#dfb26c]/70 font-bold mt-2">
-            MANAGEMENT
+          <p className="text-[8px] uppercase tracking-[0.3em] text-[#A97142] font-bold mt-2">
+            OPERATING SYSTEM
           </p>
         </div>
 
@@ -212,8 +188,10 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenMobilePWA, dark
           <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 pb-1.5 select-none">
             Workspace
           </div>
+          
           {mainNavItems.map((item) => renderNavButton(item))}
 
+          {/* Collapsible Finance Section */}
           <div className="space-y-0.5 pt-1">
             <button
               onClick={() => setFinanceOpen(!financeOpen)}
@@ -232,9 +210,12 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenMobilePWA, dark
             )}
           </div>
 
+          <div className="text-[9.5px] font-bold uppercase tracking-widest text-slate-650 px-3 pt-3 pb-1 select-none">
+            Operações & IA
+          </div>
+
           {bottomNavItems.map((item) => renderNavButton(item))}
-          {!isPWA && renderNavButton({ id: "meu-app", label: "Meu Aplicativo", icon: Smartphone })}
-          {!isPWA && userRole === "admin" && renderNavButton({ id: "pwa-sim", label: "Central Mobile (PWA)", icon: Smartphone })}
+          {!isPWA && renderNavButton({ id: "pwa-sim", label: "Central Mobile (PWA)", icon: Smartphone })}
         </div>
       </aside>
     </>
